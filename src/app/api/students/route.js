@@ -1,5 +1,5 @@
 import { db } from "@/lib/db";
-import { getAuthContext, assertSameOrigin } from "@/lib/access";
+import { getAuthContext, assertSameOrigin, isStaff, isAdmin, studentScope } from "@/lib/access";
 import { json } from "@/lib/auth";
 import { studentCreateSchema, studentUpdateSchema, idSchema } from "@/lib/validation";
 import { audit, initialsOf } from "@/lib/security";
@@ -14,14 +14,15 @@ export async function GET(request) {
   // Single-student full detail (includes photo, addresses, guardian NID,
   // etc.) — permission-checked per record, not exposed in the bulk list.
   if (id) {
-    const s = await db.student.findUnique({
-      where: { id },
+    // Scoped lookup: a record outside the caller's scope is indistinguishable
+    // from one that doesn't exist (404), so ids can't be probed.
+    const s = await db.student.findFirst({
+      where: { id: String(id), ...studentScope(ctx) },
       include: { user: { select: { name: true, email: true, phone: true, avatar: true, active: true } }, club: { select: { id: true, name: true } } },
     });
     if (!s) return json({ error: "Not found" }, 404);
-    if (ctx.user.role === "student" && s.userId !== ctx.user.id) return json({ error: "Forbidden" }, 403);
-    if (ctx.user.role === "instructor" && s.clubId !== ctx.user.instructor?.clubId) return json({ error: "Forbidden" }, 403);
-    const sensitive = ctx.user.role === "admin" || s.userId === ctx.user.id;
+    // NIDs / birth registration: admins, the student themself, and their linked guardians.
+    const sensitive = isAdmin(ctx) || s.userId === ctx.user.id || ctx.user.role === "guardian";
     return json({
       id: s.id, userId: s.userId, name: s.user.name, email: s.user.email, phone: s.user.phone, avatar: s.user.avatar,
       age: s.age, guardian: s.guardian, program: s.program, club: s.club?.name || "", clubId: s.clubId,
@@ -37,13 +38,8 @@ export async function GET(request) {
 
   const requestedClub = searchParams.get("club");
   const search = searchParams.get("search")?.trim().toLowerCase();
-  let where = {};
-  if (ctx.user.role === "instructor") {
-    if (!ctx.user.instructor?.clubId) return json([]);
-    where.clubId = ctx.user.instructor.clubId;
-  }
-  if (ctx.user.role === "student") where.userId = ctx.user.id;
-  if (requestedClub && ctx.user.role === "admin") where.clubId = requestedClub;
+  const where = { ...studentScope(ctx) };
+  if (requestedClub && isAdmin(ctx)) where.clubId = requestedClub;
   const students = await db.student.findMany({
     where, include: { user: { select: { id: true, name: true, email: true, phone: true, avatar: true, active: true } }, club: { select: { id: true, name: true } } },
     orderBy: { enrollDate: "desc" },
@@ -55,7 +51,7 @@ export async function GET(request) {
 export async function POST(request) {
   if (!assertSameOrigin(request)) return json({ error: "Invalid origin" }, 403);
   const ctx = await getAuthContext();
-  if (!ctx || ctx.user.role === "student") return json({ error: "Forbidden" }, 403);
+  if (!ctx || !isStaff(ctx)) return json({ error: "Forbidden" }, 403);
   const parsed = studentCreateSchema.safeParse(await request.json());
   if (!parsed.success) return json({ error: "Invalid student data", details: parsed.error.flatten().fieldErrors }, 400);
   const data = parsed.data;
@@ -96,7 +92,7 @@ export async function DELETE(request) {
 export async function PATCH(request) {
   if (!assertSameOrigin(request)) return json({ error: "Invalid origin" }, 403);
   const ctx = await getAuthContext();
-  if (!ctx || ctx.user.role === "student") return json({ error: "Forbidden" }, 403);
+  if (!ctx || !isStaff(ctx)) return json({ error: "Forbidden" }, 403);
   const parsed = studentUpdateSchema.safeParse(await request.json());
   if (!parsed.success) return json({ error: "Invalid student data", details: parsed.error.flatten().fieldErrors }, 400);
   const { id, name, phone, age, guardian, program, clubId } = parsed.data;

@@ -1,6 +1,6 @@
 import { db } from "@/lib/db";
 import { json } from "@/lib/auth";
-import { getAuthContext, assertSameOrigin } from "@/lib/access";
+import { getAuthContext, assertSameOrigin, isStaff } from "@/lib/access";
 import { userStatusSchema } from "@/lib/validation";
 import { audit } from "@/lib/security";
 
@@ -10,7 +10,7 @@ import { audit } from "@/lib/security";
 export async function PATCH(request) {
   if (!assertSameOrigin(request)) return json({ error: "Invalid origin" }, 403);
   const ctx = await getAuthContext();
-  if (!ctx || ctx.user.role === "student") return json({ error: "Forbidden" }, 403);
+  if (!ctx || !isStaff(ctx)) return json({ error: "Forbidden" }, 403);
 
   const parsed = userStatusSchema.safeParse(await request.json());
   if (!parsed.success) return json({ error: "Invalid request" }, 400);

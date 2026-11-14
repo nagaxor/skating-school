@@ -57,25 +57,40 @@ src/
     DashboardShell.js    Sidebar, top bar, mobile tab bar + "More" sheet, Ctrl/Cmd+K command palette
     CommandPalette.js    Palette UI (items = nav + quick actions, filtered by role)
     AccountActions.js    ResetPasswordModal, generatePassword(), strongPassword(), PASSWORD_HINT
+    GuardianHome.js      Guardian portal home (child cards) + useMyChildren() hook, TODAY status map
+    AttendanceGrid.js    12-week Sat→Fri attendance grid + recent list (staff student page + guardian child page)
     Icons.js, PWARegister.js
+  lib/fees.js            PROGRAM_FEES (Beginner 2000 / Intermediate 2500 / Advanced 3000) + balanceHistory() (≤12 months, paid/partial/due
+                         by matching monthly_fee payments to "Month YYYY" labels)
   lib/csv.js             downloadCsv(filename, rows, columns): client CSV export, formula-injection safe, UTF-8 BOM
   app/
     page.js              Public landing page
     login/, admission/   Public pages (admission = long public application form, incl. photo data URL)
-    dashboard/           Authenticated area: activity (admin audit log), attendance, branches, fees, notices,
+    dashboard/           Authenticated area: activity (admin audit log), attendance, branches, children/[id] (guardian),
+                         guardians (admin), fees, notices,
                          payment-history ("Fee Tracker"), profile ("Profile & Security"), receipt/[id], reports,
                          schedule, settings, staff, students, students/[id]
     api/<resource>/route.js   admission, attendance, audit, auth(+password, +sessions), clubs, health,
                               instructors, notices, payments, receipts, schedules, settings, staff(+role),
-                              students, users/status, users/password
+                              students, users/status, users/password, guardians (admin), my-children (guardian)
 prisma/
   schema.prisma          Models: User(role admin|instructor|student), Instructor, Student, Club, Attendance,
-                         Payment, Schedule, Notice, Setting, AuditLog
-  migrations/            0001_init, 0002_student_admission_details, 20261114160022_security_hardening
+                         Payment, Schedule, Notice, Setting, AuditLog, GuardianLink (guardian User ↔ Student, many-to-many, relation)
+  migrations/            0001_init, 0002_student_admission_details, 20261114160022_security_hardening, *_guardian_portal
   bootstrap-admin.mjs    Creates/resets one admin from ADMIN_EMAIL/ADMIN_NAME/ADMIN_PASSWORD (≥12 chars)
 scripts/localdb.py       Local isolated Postgres manager (see §4)
 scripts/security-smoke.mjs  E2E security test against the running local app (`npm run test:security`)
 ```
+
+### Authorization rules (READ before touching any API) — IDOR protection
+- **Allow-list roles, never deny-list.** Use `isStaff(ctx)` / `isAdmin(ctx)` from `lib/access.js`. Writing `role === "student" → 403`
+  is forbidden: when the `guardian` role was added (2026-11-14), every such check would have given guardians staff access.
+- **All student-related reads go through `studentScope(ctx)`** (admin {} · instructor own club · student self · guardian linked children ·
+  unknown role → nothing). Pattern: `db.student.findFirst({ where: { id, ...studentScope(ctx) } })`,
+  `db.payment.findMany({ where: { student: studentScope(ctx), ...(studentId && { studentId }) } })`. A query filter may only NARROW the scope.
+- Out-of-scope single records return **404, not 403**, so ids can't be probed.
+- Schedules and notices use `visibleClubIds(ctx)` (null = all).
+- Linking a guardian to a child grants data access, so **only admins** can do it (`/api/guardians`).
 
 ### API route pattern (follow this for new routes)
 1. `if (!assertSameOrigin(request)) return json({error:"Invalid origin"},403)` for POST/PUT/PATCH/DELETE
@@ -86,7 +101,7 @@ scripts/security-smoke.mjs  E2E security test against the running local app (`np
 6. For any create/update/delete of money, people, roles, or settings, call `await audit({...})` from `lib/security.js`
 
 ### Security model (keep it intact)
-- Roles: `admin` (everything), `instructor` (own club), `student` (self only).
+- Roles: `admin` (everything), `instructor` (own club), `student` (self only), `guardian` (read-only: linked children only, via `GuardianLink`).
 - CSP and security headers are in `next.config.js`. Adding any external script/CDN means updating the CSP.
 - Public admission is rate-limited and can create only `student` users.
 - **Session revocation:** every JWT has `sv` = `User.sessionVersion`, which `getAuthContext()` checks.
@@ -149,9 +164,22 @@ to reset it, re-run `db:bootstrap-admin` with a new password).
 - `npm run build`
 - `curl http://localhost:3000/api/health` → `{"status":"ok","database":"ok"}`
 - Manually smoke-test login, attendance, payment → receipt, admission, and role restrictions.
-- `ADMIN_EMAIL=... ADMIN_PASSWORD=... npm run test:security`: 23 end-to-end security checks (local only; it refuses a non-localhost URL).
+- `ADMIN_EMAIL=... ADMIN_PASSWORD=... npm run test:security`: ~50 end-to-end security checks, including **guardian IDOR isolation**
+  (guardian A vs B across students, payments, attendance, receipts, plus every mutation and admin endpoint) (local only; it refuses a non-localhost URL).
   It creates and deletes a temporary instructor. Run it after touching auth/access/API code.
 - There are no unit tests yet.
+
+## 4b. Branches & guardian portal
+- Real branches: **Uttara, Bashundhara, Aftab Nagar, Gulshan** (they exist in the local DB; in production an admin creates them under Branches).
+- Renaming a branch also updates notices whose `audience` is the old name (notices target branches by name).
+- **Guardian portal:** the admin creates a guardian on the Guardians page (login email + temporary password) and links children
+  (Father / Mother / Guardian). The guardian signs in at /login and sees "My Children": per child, today's status
+  (in class / absent / not marked yet / no class), this month's attendance, next class, and the outstanding balance.
+  `/dashboard/children/[id]` has tabs for Attendance (12 weeks), Balance (month by month), Receipts and Classes. Guardians can also see
+  Fees (their children's receipts), Schedule and Notices (their children's branches) and Profile. Everything is read-only.
+- `/api/my-children` deliberately omits NID / birth-registration numbers.
+- Local sample guardians: `guardian1@local.test` (2 children), `guardian2@local.test` (2), `guardian3@local.test` (1); password `Guardian-pass-1`.
+- Not built yet: online admission does NOT create a guardian account (it still creates a student login). The admin links guardians manually. → backlog
 
 ## 5. Design system (2026-11 redesign)
 - **Look:** a "premium sports club" feel. Deep **ink** neutrals, an **ice-cyan brand** accent, a **gold** highlight for premium and "featured" items.
@@ -203,6 +231,8 @@ to reset it, re-run `db:bootstrap-admin` with a new password).
 
 ## 8. Upgrade backlog (prioritized — pick from the top; move to Changelog when done)
 0. **Merge `redesign` → `main`** after the owner reviews it locally (`main` deploys to Vercel); run `prisma migrate deploy` on prod first.
+0. Admission → create/link a guardian account automatically (and "enroll another child" from the guardian portal).
+0. Guardian notifications (SMS/WhatsApp when a child is marked absent or a fee is due).
 0. Nonce-based CSP (drop script `'unsafe-inline'`); persistent (DB) per-IP rate limiting.
 1. **Safe patch/minor bumps:** react/react-dom 19.3, zod 4.6, jose 6.2, postcss, autoprefixer, bcryptjs, speed-insights; then `npm audit fix` (non-force).
 2. **Wire up or remove** Vercel Analytics/SpeedInsights in `layout.js` (check the CSP allows it).
@@ -218,6 +248,13 @@ to reset it, re-run `db:bootstrap-admin` with a new password).
 
 ## Changelog
 <!-- Newest first. Format: YYYY-MM-DD — what changed — files touched -->
+- **2026-11-14** — **Guardian portal + IDOR hardening.** Migration `guardian_portal` (Role.guardian, GuardianLink). New central authz in
+  lib/access.js (`isStaff`, `isAdmin`, `studentScope`, `visibleClubIds`). Every API route was refactored from deny-lists to allow-lists and
+  scoped reads (students, payments, receipts, attendance, schedules, notices, users/status); out-of-scope records → 404.
+  New APIs: `/api/guardians` (admin CRUD + link/unlink, audited), `/api/my-children` (guardian). New pages: Guardians (admin),
+  guardian home (child cards), children/[id]. UI role checks are allow-lists too. lib/fees.js for balance history.
+  Branch rename now carries notices along. The security smoke test gained ~25 guardian isolation checks (all pass). Local data: branches renamed to
+  Uttara / Bashundhara / Aftab Nagar / Gulshan, plus 3 sample guardians.
 - **2026-11-14** — **UI polish round 3.** `/admission` rebuilt: dark brand rail with a clickable stepper and program summary, progress bar,
   per-step titles, choice chips (program, gender, shift, blood group, occupation type) instead of dropdowns, father/mother cards,
   a review summary on the last step (validation/submit logic unchanged; the form is always light-themed).

@@ -26,7 +26,7 @@ export default function SchedulePage() {
   // Adding a slot needs the full instructor roster (admin-only endpoint).
   // Deleting is allowed for admins and for instructors within their branch.
   const canAdd = user.role === "admin";
-  const canDelete = user.role !== "student";
+  const canDelete = ["admin", "instructor"].includes(user.role);
 
   const load = useCallback(() => api("/api/schedules").then(setSchedules).finally(() => setLoading(false)), []);
   useEffect(() => {

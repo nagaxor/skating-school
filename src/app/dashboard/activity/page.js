@@ -13,6 +13,7 @@ const FILTERS = [
   { key: "student", label: "Students" },
   { key: "staff", label: "Staff" },
   { key: "user", label: "Accounts" },
+  { key: "guardian", label: "Guardians" },
   { key: "settings", label: "Settings" },
 ];
 
@@ -43,6 +44,10 @@ const LABELS = {
   "schedule.create": ["Added a class slot", "brand"],
   "schedule.delete": ["Removed a class slot", "slate"],
   "settings.update": ["Changed a setting", "gold"],
+  "guardian.create": ["Created a guardian account", "brand"],
+  "guardian.link": ["Linked a child to a guardian", "gold"],
+  "guardian.unlink": ["Unlinked a child from a guardian", "gold"],
+  "guardian.delete": ["Deleted a guardian account", "red"],
 };
 
 function describe(item) {
@@ -55,6 +60,7 @@ function describe(item) {
     case "notice.create": case "notice.delete": return m.title;
     case "schedule.create": case "schedule.delete": return `${m.day} ${m.time} · ${m.program}`;
     case "branch.update": return m.name;
+    case "guardian.link": return `${m.student} → ${m.name} (${m.relation})`;
     default: return m.name || "";
   }
 }

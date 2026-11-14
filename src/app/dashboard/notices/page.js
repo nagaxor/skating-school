@@ -17,7 +17,7 @@ export default function NoticesPage() {
   const [busy, setBusy] = useState(false);
   const [onlyUrgent, setOnlyUrgent] = useState(false);
 
-  const canPost = user.role !== "student";
+  const canPost = ["admin", "instructor"].includes(user.role);
   const canDelete = (n) => user.role === "admin" || (user.role === "instructor" && n.mine);
 
   const load = useCallback(() => api("/api/notices").then(setNotices).finally(() => setLoading(false)), []);

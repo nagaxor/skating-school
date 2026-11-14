@@ -1,21 +1,22 @@
 import { db } from "@/lib/db";
-import { getAuthContext, assertSameOrigin } from "@/lib/access";
+import { getAuthContext, assertSameOrigin, isStaff, visibleClubIds } from "@/lib/access";
 import { json } from "@/lib/auth";
 import { noticeCreateSchema, idSchema } from "@/lib/validation";
 import { audit } from "@/lib/security";
 
 export async function GET(){
   const ctx=await getAuthContext(); if(!ctx) return json({error:'Unauthorized'},401);
-  const where= ctx.user.role==='student' ? (ctx.user.student?.clubId ? {OR:[{audience:'All'},{audience:(await db.club.findUnique({where:{id:ctx.user.student.clubId},select:{name:true}}))?.name || '__none__'}]} : {audience:'__none__'})
-    : ctx.user.role==='instructor' ? (ctx.user.instructor?.clubId ? {OR:[{audience:'All'},{audience:(await db.club.findUnique({where:{id:ctx.user.instructor.clubId},select:{name:true}}))?.name || '__none__'}]} : {audience:'__none__'})
-    : {};
+  // Everyone sees "All"; branch notices only for branches in the caller's scope.
+  const clubIds=await visibleClubIds(ctx);
+  const names= clubIds===null ? null : (await db.club.findMany({where:{id:{in:clubIds}},select:{name:true}})).map(c=>c.name);
+  const where= names===null ? {} : {audience:{in:['All',...names]}};
   const notices=await db.notice.findMany({where,include:{author:{select:{name:true}}},orderBy:{date:'desc'},take:300});
   return json(notices.map(n=>({id:n.id,title:n.title,body:n.body,audience:n.audience,urgent:n.urgent,author:n.author.name,mine:n.authorId===ctx.user.id,date:n.date.toISOString().slice(0,10)})));
 }
 
 export async function POST(request){
   if(!assertSameOrigin(request)) return json({error:'Invalid origin'},403);
-  const ctx=await getAuthContext(); if(!ctx || ctx.user.role==='student') return json({error:'Forbidden'},403);
+  const ctx=await getAuthContext(); if(!ctx || !isStaff(ctx)) return json({error:'Forbidden'},403);
   const parsed=noticeCreateSchema.safeParse(await request.json()); if(!parsed.success) return json({error:'Invalid notice',details:parsed.error.flatten().fieldErrors},400);
   let audience=parsed.data.audience;
   if(ctx.user.role==='instructor'){
@@ -32,7 +33,7 @@ export async function POST(request){
 // Admins can delete any notice; instructors only notices they posted.
 export async function DELETE(request){
   if(!assertSameOrigin(request)) return json({error:'Invalid origin'},403);
-  const ctx=await getAuthContext(); if(!ctx || ctx.user.role==='student') return json({error:'Forbidden'},403);
+  const ctx=await getAuthContext(); if(!ctx || !isStaff(ctx)) return json({error:'Forbidden'},403);
   const id=new URL(request.url).searchParams.get('id');
   if(!idSchema.safeParse(id).success) return json({error:'Invalid id'},400);
   const notice=await db.notice.findUnique({where:{id}});

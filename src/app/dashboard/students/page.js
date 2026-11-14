@@ -103,7 +103,7 @@ export default function StudentsPage() {
   ]);
 
   if (loading) return <PageLoading statCards={0} />;
-  const canManage = user.role !== "student";
+  const canManage = ["admin", "instructor"].includes(user.role);
 
   return (
     <div className="space-y-5">

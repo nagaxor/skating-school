@@ -12,6 +12,7 @@ enum Role {
   admin
   instructor
   student
+  guardian
 }
 
 enum PaymentMethod {
@@ -58,8 +59,29 @@ model User {
   attendanceMarked Attendance[] @relation("MarkedBy")
   auditLogs        AuditLog[]
 
+  // Guardian role: the children this user may see.
+  guardianLinks GuardianLink[]
+
   @@index([role, active])
   @@map("users")
+}
+
+// Guardian (parent) ↔ student. Many-to-many: a parent can have several
+// children, and a child can have both parents linked. This table is the ONLY
+// source of truth for what a guardian may see (see studentScope in lib/access.js).
+model GuardianLink {
+  id         String   @id @default(cuid())
+  guardianId String   @map("guardian_id")
+  studentId  String   @map("student_id")
+  relation   String?  // "Father" | "Mother" | "Guardian"
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  guardian User    @relation(fields: [guardianId], references: [id], onDelete: Cascade)
+  student  Student @relation(fields: [studentId], references: [id], onDelete: Cascade)
+
+  @@unique([guardianId, studentId])
+  @@index([studentId])
+  @@map("guardian_links")
 }
 
 // Append-only record of security-relevant and financial actions.
@@ -138,6 +160,7 @@ model Student {
   club       Club?        @relation(fields: [clubId], references: [id])
   attendance Attendance[]
   payments   Payment[]
+  guardianLinks GuardianLink[]
 
   @@index([clubId])
   @@index([enrollDate])

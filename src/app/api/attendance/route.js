@@ -1,5 +1,5 @@
 import { db } from "@/lib/db";
-import { getAuthContext, assertSameOrigin } from "@/lib/access";
+import { getAuthContext, assertSameOrigin, isStaff, studentScope } from "@/lib/access";
 import { json } from "@/lib/auth";
 import { attendanceCreateSchema } from "@/lib/validation";
 
@@ -8,13 +8,8 @@ function dayUtc(value){ const [y,m,d]=value.split('-').map(Number); return new D
 export async function GET(request){
   const ctx=await getAuthContext(); if(!ctx) return json({error:'Unauthorized'},401);
   const sp=new URL(request.url).searchParams; const studentId=sp.get('studentId'); const date=sp.get('date'); const month=sp.get('month');
-  const where={};
-  if(ctx.user.role==='student') where.studentId=ctx.user.student?.id || '__none__';
-  else if(ctx.user.role==='instructor') {
-    if(!ctx.user.instructor?.clubId) return json([]);
-    where.student={clubId:ctx.user.instructor.clubId};
-    if(studentId) where.studentId=studentId;
-  } else if(studentId) where.studentId=studentId;
+  const where={student:studentScope(ctx)};
+  if(studentId) where.studentId=String(studentId);
   if(date) where.date=dayUtc(date);
   else if(month && /^\d{4}-\d{2}$/.test(month)){ const [y,m]=month.split('-').map(Number); where.date={gte:new Date(Date.UTC(y,m-1,1)),lt:new Date(Date.UTC(y,m,1))}; }
   const records=await db.attendance.findMany({where,include:{student:{include:{user:{select:{name:true}}}}},orderBy:{date:'desc'},take:2000});
@@ -23,7 +18,7 @@ export async function GET(request){
 
 export async function POST(request){
   if(!assertSameOrigin(request)) return json({error:'Invalid origin'},403);
-  const ctx=await getAuthContext(); if(!ctx || ctx.user.role==='student') return json({error:'Forbidden'},403);
+  const ctx=await getAuthContext(); if(!ctx || !isStaff(ctx)) return json({error:'Forbidden'},403);
   const parsed=attendanceCreateSchema.safeParse(await request.json()); if(!parsed.success) return json({error:'Invalid attendance data'},400);
   const d=parsed.data; const ids=[...new Set(d.records.map(r=>r.studentId))];
   const students=await db.student.findMany({where:{id:{in:ids}},select:{id:true,clubId:true}});

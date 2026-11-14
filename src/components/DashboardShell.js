@@ -12,22 +12,24 @@ import CommandPalette from "@/components/CommandPalette";
 
 const MENU = [
   { href: "/dashboard", label: "Overview", icon: Icon.Home, roles: ["admin", "instructor", "student"], exact: true },
+  { href: "/dashboard", label: "My Children", icon: Icon.Users, roles: ["guardian"], exact: true },
   { section: "People" },
   { href: "/dashboard/students", label: "Students", icon: Icon.Users, roles: ["admin", "instructor"] },
+  { href: "/dashboard/guardians", label: "Guardians", icon: Icon.HeartPulse, roles: ["admin"] },
   { href: "/dashboard/staff", label: "Staff", icon: Icon.Shield, roles: ["admin"] },
   { href: "/dashboard/branches", label: "Branches", icon: Icon.Building, roles: ["admin"] },
   { section: "Operations" },
   { href: "/dashboard/attendance", label: "Attendance", icon: Icon.Clipboard, roles: ["admin", "instructor"] },
-  { href: "/dashboard/fees", label: "Fees & Payments", icon: Icon.Wallet, roles: ["admin", "instructor", "student"] },
+  { href: "/dashboard/fees", label: "Fees & Payments", icon: Icon.Wallet, roles: ["admin", "instructor", "student", "guardian"] },
   { href: "/dashboard/payment-history", label: "Fee Tracker", icon: Icon.TrendingUp, roles: ["admin", "instructor"] },
-  { href: "/dashboard/schedule", label: "Schedule", icon: Icon.Calendar, roles: ["admin", "instructor", "student"] },
-  { href: "/dashboard/notices", label: "Notices", icon: Icon.Bell, roles: ["admin", "instructor", "student"] },
+  { href: "/dashboard/schedule", label: "Schedule", icon: Icon.Calendar, roles: ["admin", "instructor", "student", "guardian"] },
+  { href: "/dashboard/notices", label: "Notices", icon: Icon.Bell, roles: ["admin", "instructor", "student", "guardian"] },
   { section: "Administration" },
   { href: "/dashboard/reports", label: "Reports", icon: Icon.BarChart, roles: ["admin"] },
   { href: "/dashboard/activity", label: "Activity Log", icon: Icon.Activity, roles: ["admin"] },
   { href: "/dashboard/settings", label: "Settings", icon: Icon.Settings, roles: ["admin"] },
   { section: "Account" },
-  { href: "/dashboard/profile", label: "Profile & Security", icon: Icon.User, roles: ["admin", "instructor", "student"] },
+  { href: "/dashboard/profile", label: "Profile & Security", icon: Icon.User, roles: ["admin", "instructor", "student", "guardian"] },
 ];
 
 // Same four destinations for every role so the phone tab bar never reshuffles.
@@ -87,7 +89,9 @@ export default function DashboardShell({ user, children }) {
 
   const activeItem = pathname.startsWith("/dashboard/receipt/")
     ? { label: "Receipt" }
-    : [...MENU].reverse().find((m) => m.href && isActive(pathname, m));
+    : pathname.startsWith("/dashboard/children/")
+    ? { label: "My Children" }
+    : [...MENU].reverse().find((m) => m.href && m.roles.includes(user.role) && isActive(pathname, m));
   const onATab = TABS.some((t) => isActive(pathname, t));
 
   useEffect(() => {
@@ -106,7 +110,7 @@ export default function DashboardShell({ user, children }) {
       if (m.roles.includes(user.role)) nav.push({ label: m.label, href: m.href, icon: m.icon, group });
     }
     const actions = [];
-    if (user.role !== "student") {
+    if (["admin", "instructor"].includes(user.role)) {
       actions.push({ label: "Record a payment", href: "/dashboard/fees", icon: Icon.Wallet, group: "Quick actions", keywords: "fee receipt collect" });
       actions.push({ label: "Mark today's attendance", href: "/dashboard/attendance", icon: Icon.Clipboard, group: "Quick actions", keywords: "present absent" });
       actions.push({ label: "Post a notice", href: "/dashboard/notices", icon: Icon.Bell, group: "Quick actions", keywords: "announcement" });
@@ -228,5 +232,5 @@ export default function DashboardShell({ user, children }) {
 }
 
 function roleLabel(role) {
-  return role === "admin" ? "Administrator" : role === "instructor" ? "Instructor" : "Student";
+  return { admin: "Administrator", instructor: "Instructor", student: "Student", guardian: "Guardian" }[role] || "Member";
 }

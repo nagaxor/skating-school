@@ -89,5 +89,59 @@ try {
   check("cleanup temp instructor", del.status === 200, `status ${del.status}`);
 }
 
+// ── Guardian portal: IDOR / tenant isolation ─────────────────────────────
+console.log("\n— guardian isolation —");
+const tag = Date.now();
+const kids = [];
+const guardians = [];
+try {
+  for (let i = 0; i < 3; i++) {
+    const r = await call("/api/students", { method: "POST", cookie: A, body: { name: `Kid ${i} ${tag}`, email: `kid${i}-${tag}@local.test`, password: "Kid-pass-123", guardian: "Parent" } });
+    kids.push(r.data?.id);
+  }
+  check("create 3 temp students", kids.every(Boolean));
+  const pays = [];
+  for (const id of kids) pays.push((await call("/api/payments", { method: "POST", cookie: A, body: { studentId: id, amount: 2000, method: "cash", type: "monthly_fee", month: "January 2026" } })).data?.id);
+  await call("/api/attendance", { method: "POST", cookie: A, body: { date: new Date().toISOString().slice(0, 10), records: kids.map((studentId) => ({ studentId, status: "present" })) } });
+
+  const gA = await call("/api/guardians", { method: "POST", cookie: A, body: { name: "Guardian A", email: `ga-${tag}@local.test`, password: "Guard-pass-1", children: [{ studentId: kids[0], relation: "Father" }, { studentId: kids[1], relation: "Father" }] } });
+  const gB = await call("/api/guardians", { method: "POST", cookie: A, body: { name: "Guardian B", email: `gb-${tag}@local.test`, password: "Guard-pass-1", children: [{ studentId: kids[2], relation: "Mother" }] } });
+  guardians.push(gA.data?.userId, gB.data?.userId);
+  check("create 2 guardians", gA.status === 201 && gB.status === 201);
+  const GA = (await login(`ga-${tag}@local.test`, "Guard-pass-1")).cookie;
+  const GB = (await login(`gb-${tag}@local.test`, "Guard-pass-1")).cookie;
+
+  const mine = await call("/api/my-children", { cookie: GA });
+  const mineIds = (mine.data?.children || []).map((c) => c.id).sort();
+  check("guardian A sees exactly their 2 children", JSON.stringify(mineIds) === JSON.stringify([kids[0], kids[1]].sort()));
+  check("my-children omits NID/birth-reg", !JSON.stringify(mine.data).match(/Nid|birthReg/));
+  check("guardian B sees exactly 1 child", (await call("/api/my-children", { cookie: GB })).data?.children?.length === 1);
+
+  const other = kids[2];
+  check("IDOR: A cannot open B's child (students?id)", (await call(`/api/students?id=${other}`, { cookie: GA })).status === 404);
+  check("IDOR: A's student list has only own kids", ((await call("/api/students", { cookie: GA })).data || []).every((s) => [kids[0], kids[1]].includes(s.id)));
+  check("IDOR: A gets no payments for B's child", ((await call(`/api/payments?studentId=${other}`, { cookie: GA })).data || []).length === 0);
+  check("IDOR: A's payment list has only own kids", ((await call("/api/payments", { cookie: GA })).data || []).every((p) => [kids[0], kids[1]].includes(p.studentId)));
+  check("IDOR: A gets no attendance for B's child", ((await call(`/api/attendance?studentId=${other}`, { cookie: GA })).data || []).length === 0);
+  check("IDOR: A cannot open B's child's receipt", (await call(`/api/receipts?id=${pays[2]}`, { cookie: GA })).status === 404);
+  check("A can open own child's receipt", (await call(`/api/receipts?id=${pays[0]}`, { cookie: GA })).status === 200);
+
+  check("guardian cannot record payments", (await call("/api/payments", { method: "POST", cookie: GA, body: { studentId: kids[0], amount: 1, method: "cash", type: "monthly_fee", month: "X" } })).status === 403);
+  check("guardian cannot mark attendance", (await call("/api/attendance", { method: "POST", cookie: GA, body: { date: "2026-01-01", records: [{ studentId: kids[0], status: "absent" }] } })).status === 403);
+  check("guardian cannot edit students", (await call("/api/students", { method: "PATCH", cookie: GA, body: { id: kids[0], name: "Hacked" } })).status === 403);
+  check("guardian cannot post notices", (await call("/api/notices", { method: "POST", cookie: GA, body: { title: "x", body: "yy" } })).status === 403);
+  check("guardian cannot deactivate users", (await call("/api/users/status", { method: "PATCH", cookie: GA, body: { userId: guardians[1], active: false } })).status === 403);
+  check("guardian cannot manage guardians", (await call("/api/guardians", { cookie: GA })).status === 403 && (await call("/api/guardians", { method: "PATCH", cookie: GA, body: { guardianId: guardians[0], link: { studentId: other } } })).status === 403);
+  for (const p of ["/api/staff", "/api/audit", "/api/instructors"]) check(`guardian blocked from ${p}`, (await call(p, { cookie: GA })).status === 403);
+  check("student role cannot use guardian portal", (await call("/api/my-children", { cookie: (await login(`kid0-${tag}@local.test`, "Kid-pass-123")).cookie })).status === 403);
+
+  check("unlink child", (await call("/api/guardians", { method: "PATCH", cookie: A, body: { guardianId: guardians[0], unlink: kids[1] } })).status === 200);
+  check("unlinked child disappears immediately", (await call(`/api/students?id=${kids[1]}`, { cookie: GA })).status === 404);
+} finally {
+  for (const g of guardians) if (g) await call(`/api/guardians?userId=${g}`, { method: "DELETE", cookie: A });
+  for (const k of kids) if (k) await call(`/api/students?id=${k}`, { method: "DELETE", cookie: A });
+  console.log("cleanup guardian fixtures done");
+}
+
 console.log(failures ? `\n${failures} check(s) FAILED` : "\nAll security checks passed");
 process.exit(failures ? 1 : 0);

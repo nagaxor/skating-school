@@ -22,7 +22,7 @@ export default function FeesPage() {
   const load = () => Promise.all([api("/api/payments"), api("/api/students")]).then(([p, s]) => { setPayments(p); setStudents(s); }).finally(() => setLoading(false));
   useEffect(() => { load(); }, []);
 
-  const canRecord = user.role !== "student";
+  const canRecord = ["admin", "instructor"].includes(user.role);
 
   const handleAdd = async (form) => {
     const res = await api("/api/payments", { method: "POST", body: JSON.stringify(form) });

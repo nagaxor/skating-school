@@ -71,7 +71,14 @@ export async function PATCH(request) {
   if (!existing) return json({ error: "Branch not found" }, 404);
 
   try {
-    await db.club.update({ where: { id }, data });
+    // Notices target a branch by NAME, so a rename must carry them along or
+    // that branch's students would silently stop seeing its notices.
+    await db.$transaction([
+      db.club.update({ where: { id }, data }),
+      ...(data.name && data.name !== existing.name
+        ? [db.notice.updateMany({ where: { audience: existing.name }, data: { audience: data.name } })]
+        : []),
+    ]);
     await audit({ actorId: ctx.user.id, action: "branch.update", target: id, meta: { name: existing.name, changes: data }, request });
     return json({ success: true });
   } catch (err) {

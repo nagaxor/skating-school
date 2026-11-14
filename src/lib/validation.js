@@ -126,3 +126,17 @@ export const admissionSchema = z.object({
 
   agree: z.literal(true, { errorMap: () => ({ message: "You must confirm the information is correct" }) }),
 });
+// Guardian portal
+const relationSchema = z.enum(["Father", "Mother", "Guardian"]);
+export const guardianCreateSchema = z.object({
+  name: z.string().trim().min(2).max(100),
+  email: emailSchema,
+  phone: z.string().trim().max(30).optional().or(z.literal("")),
+  password: passwordSchema,
+  children: z.array(z.object({ studentId: idSchema, relation: relationSchema.default("Guardian") })).max(20).default([]),
+});
+export const guardianLinkSchema = z.object({
+  guardianId: idSchema,
+  link: z.object({ studentId: idSchema, relation: relationSchema.default("Guardian") }).optional(),
+  unlink: idSchema.optional(),
+}).refine((v) => !!v.link !== !!v.unlink, "Provide exactly one of link or unlink");

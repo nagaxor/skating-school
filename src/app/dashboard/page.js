@@ -6,12 +6,18 @@ import { useAuth } from "@/lib/auth-context";
 import { api } from "@/lib/api";
 import { Icon } from "@/components/Icons";
 import { Badge, PageLoading, EmptyState, StatCard, Avatar, cx } from "@/components/ui";
+import GuardianHome from "@/components/GuardianHome";
 
 const DAYS = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
 const taka = (n) => `৳${Number(n || 0).toLocaleString("en-IN")}`;
 
 export default function DashboardHome() {
   const { user } = useAuth();
+  if (user.role === "guardian") return <GuardianHome user={user} />;
+  return <MemberHome user={user} />;
+}
+
+function MemberHome({ user }) {
   const [data, setData] = useState(null);
   const [error, setError] = useState("");
 
@@ -44,7 +50,7 @@ export default function DashboardHome() {
             {greet}, {user.name.split(" ")[0]}
           </h2>
         </div>
-        {user.role !== "student" && (
+        {["admin", "instructor"].includes(user.role) && (
           <div className="flex gap-2">
             <Link href="/dashboard/attendance" className={cx.btnSecondary}><Icon.Clipboard width={16} height={16} /> Attendance</Link>
             <Link href="/dashboard/fees" className={cx.btnPrimary}><Icon.Plus width={16} height={16} /> Record payment</Link>

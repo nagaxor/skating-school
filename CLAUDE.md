@@ -189,6 +189,20 @@ to reset it, re-run `db:bootstrap-admin` with a new password).
 - Local sample guardians: `guardian1@local.test` (2 children), `guardian2@local.test` (2), `guardian3@local.test` (1); password `Guardian-pass-1`.
 - Not built yet: online admission does NOT create a guardian account (it still creates a student login). The admin links guardians manually. → backlog
 
+## 4c. SEO
+- `lib/seo.js`: SITE_URL (from **NEXT_PUBLIC_APP_URL**, which MUST be the real https origin in production *before the build*: robots,
+  sitemap and canonicals are baked in at build time), SITE_DESCRIPTION (keep under 160 chars), KEYWORDS, `pageMeta({title, description, path})`
+  (canonical + OG + Twitter; it repeats OG_IMAGE because a page-level openGraph REPLACES the root one), JSON-LD builders.
+- `components/JsonLd.js`: escapes `<`. Schema per page: home = SportsOrganization + EducationalOrganization (with live branches as
+  SportsActivityLocation) + WebSite; programs = ItemList of Course (BDT offers); faq = FAQPage; how-to-join = HowTo; branches = ItemList; all
+  sub-pages = BreadcrumbList.
+- `app/robots.js` (disallows /dashboard, /api/, /login), `app/sitemap.js` (7 public URLs incl. /admission), `app/opengraph-image.js`
+  (1200×630 card via next/og; avoid radial-gradient, which renders badly in Satori).
+- noindex: login/layout.js, dashboard/layout.js. admission/layout.js gives the client admission page its metadata.
+- Every public page has exactly one `<h1>` (verified).
+- When `public/logo.png` arrives: set `LOGO_PATH = "/logo.png"` in seo.js, put the logo into opengraph-image.js, and regenerate the favicons.
+- After going live: add the site to Google Search Console, submit /sitemap.xml, and add the Facebook page URL as `sameAs` in organizationLd.
+
 ## 5. Design system (2026-11 redesign)
 - **Client palette (required, 2026-11-14):** **Midnight Black `#030407`** (ink-950), **Electric Cobalt Blue `#1558C9`** (brand-600),
   **Acid Lime `#D4FF24`** (lime-400). The client's reference was a dark product site with a lime "Buy now" pill and cobalt accents.
@@ -268,6 +282,11 @@ to reset it, re-run `db:bootstrap-admin` with a new password).
 
 ## Changelog
 <!-- Newest first. Format: YYYY-MM-DD — what changed — files touched -->
+- **2026-11-14** — **SEO.** Root metadata (metadataBase, title template, keywords, OG/Twitter, robots), per-page metadata with canonicals,
+  robots.txt, sitemap.xml, a generated OG share image, JSON-LD (organization + branches, courses with BDT prices, FAQPage, HowTo,
+  breadcrumbs), noindex on login/dashboard, admission metadata via layout. Fixed sub-pages missing og:image; home description shortened to
+  143 chars. Verified: all JSON-LD parses, 1 h1 per page, `npm run build` OK. Logo still pending (owner must save public/logo.png; the
+  Downloads/logo.png on this PC is a different logo).
 - **2026-11-14** — Footer redesign (owner asked to make the Explore column nicer). Four columns: brand + clickable branch chips · Explore (6 pages
   in a 2-col grid with dot markers) · Get started (lime "Admission form" and subtle "Portal sign in" action buttons) · Contact (icon tiles that
   turn lime on hover). Shorter footer. On phones the last-page pager button says "Apply now" so the Previous label isn't squeezed. File: SiteShell.js.

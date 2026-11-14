@@ -4,6 +4,9 @@ import { getAuthContext } from "@/lib/access";
 import { AuthProvider } from "@/lib/auth-context";
 import DashboardShell from "@/components/DashboardShell";
 
+// Private app area: never indexed.
+export const metadata = { title: "Dashboard", robots: { index: false, follow: false } };
+
 export default async function DashboardLayout({ children }) {
   // Same checks as the API: valid JWT, active user, matching role and
   // session version (so revoked sessions can't even render the shell).

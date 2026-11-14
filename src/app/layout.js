@@ -2,6 +2,7 @@ import { Inter, Sora } from "next/font/google";
 import "./globals.css";
 import PWARegister from "@/components/PWARegister";
 import { ThemeProvider } from "@/lib/theme-context";
+import { SITE_URL, SITE_NAME, SITE_TAGLINE, SITE_DESCRIPTION, KEYWORDS } from "@/lib/seo";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -19,11 +20,30 @@ const sora = Sora({
 });
 
 export const metadata = {
+  metadataBase: new URL(SITE_URL),
   title: {
-    default: "Online Skating School",
-    template: "%s · Online Skating School",
+    default: `${SITE_NAME} | ${SITE_TAGLINE}`,
+    template: `%s | ${SITE_NAME}`,
   },
-  description: "Bangladesh's leading roller skating academy — professional coaching for ages 3+",
+  description: SITE_DESCRIPTION,
+  keywords: KEYWORDS,
+  applicationName: SITE_NAME,
+  category: "sports",
+  authors: [{ name: SITE_NAME }],
+  creator: SITE_NAME,
+  publisher: SITE_NAME,
+  alternates: { canonical: "/" },
+  openGraph: {
+    type: "website",
+    siteName: SITE_NAME,
+    locale: "en_US",
+    url: "/",
+    title: `${SITE_NAME} | ${SITE_TAGLINE}`,
+    description: SITE_DESCRIPTION,
+  },
+  twitter: { card: "summary_large_image", title: `${SITE_NAME} | ${SITE_TAGLINE}`, description: SITE_DESCRIPTION },
+  robots: { index: true, follow: true, googleBot: { index: true, follow: true, "max-image-preview": "large", "max-snippet": -1 } },
+  formatDetection: { telephone: false, email: false, address: false },
   manifest: "/manifest.json",
   icons: {
     icon: [

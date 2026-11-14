@@ -1,158 +1,258 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useParams } from "next/navigation";
+import Link from "next/link";
+import { useAuth } from "@/lib/auth-context";
 import { api } from "@/lib/api";
 import { Icon } from "@/components/Icons";
-import { Badge, PageLoading, EmptyState, cx } from "@/components/ui";
-import Link from "next/link";
+import { Badge, PageLoading, EmptyState, Avatar, ConfirmDialog, Toast, cx } from "@/components/ui";
+import { ResetPasswordModal } from "@/components/AccountActions";
 
-const PROGRAM_TONE = { Beginner: "emerald", Intermediate: "amber", Advanced: "red" };
-const fmtDate = (d) => d ? new Date(d).toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" }) : "—";
+const PROGRAM_TONE = { Beginner: "brand", Intermediate: "gold", Advanced: "red" };
+const fmtDate = (d) => (d ? new Date(d).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" }) : "—");
+const taka = (n) => `৳${Number(n || 0).toLocaleString("en-IN")}`;
+const title = (s) => (s ? s.charAt(0) + s.slice(1).toLowerCase() : s);
 
 export default function StudentDetailPage() {
   const { id } = useParams();
+  const { user } = useAuth();
   const [student, setStudent] = useState(null);
   const [payments, setPayments] = useState([]);
   const [attendance, setAttendance] = useState([]);
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
-  const [tab, setTab] = useState("overview");
+  const [tab, setTab] = useState("profile");
+  const [resetOpen, setResetOpen] = useState(false);
+  const [confirm, setConfirm] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const [toast, setToast] = useState(null);
 
-  useEffect(() => {
-    Promise.all([api(`/api/students?id=${id}`), api(`/api/payments?studentId=${id}`), api(`/api/attendance?studentId=${id}`)])
-      .then(([s, p, a]) => { setStudent(s); setPayments(p); setAttendance(a); })
-      .catch(() => setNotFound(true))
-      .finally(() => setLoading(false));
-  }, [id]);
+  const load = useCallback(() => Promise.all([api(`/api/students?id=${id}`), api(`/api/payments?studentId=${id}`), api(`/api/attendance?studentId=${id}`)])
+    .then(([s, p, a]) => { setStudent(s); setPayments(p); setAttendance(a); })
+    .catch(() => setNotFound(true))
+    .finally(() => setLoading(false)), [id]);
+  useEffect(() => { load(); }, [load]);
 
-  if (loading) return <PageLoading />;
-  if (notFound || !student) return <div className={cx.card}><EmptyState icon={Icon.Users} title="Student not found" /></div>;
+  if (loading) return <PageLoading statCards={0} />;
+  if (notFound || !student) return <div className={cx.card}><EmptyState icon={Icon.Users} title="Student not found" hint="They may have been removed, or you don't have access." action={<Link href="/dashboard/students" className={cx.btnSecondary}>Back to students</Link>} /></div>;
 
-  const presentCount = attendance.filter((a) => a.status === "present").length;
-  const attRate = attendance.length ? Math.round((presentCount / attendance.length) * 100) : 0;
+  const present = attendance.filter((a) => a.status === "present").length;
+  const rate = attendance.length ? Math.round((present / attendance.length) * 100) : null;
   const totalPaid = payments.reduce((s, p) => s + p.amount, 0);
+  const lastPayment = payments[0];
+  const isActive = student.status === "active";
+  const canManage = user.role !== "student";
+
+  const toggleStatus = async () => {
+    setBusy(true);
+    try {
+      await api("/api/users/status", { method: "PATCH", body: JSON.stringify({ userId: student.userId, active: !isActive }) });
+      setToast({ message: isActive ? "Account deactivated" : "Account reactivated", tone: "emerald" });
+      setConfirm(false);
+      load();
+    } catch (e) { setToast({ message: e.message, tone: "red" }); }
+    finally { setBusy(false); }
+  };
+
+  const r = 34, c = 2 * Math.PI * r;
 
   return (
     <div className="space-y-5">
-      <Link href="/dashboard/students" className={cx.link + " inline-flex items-center gap-1"}><Icon.ArrowLeft width={14} height={14} /> Back to Students</Link>
+      {canManage && <Link href="/dashboard/students" className={cx.link}><Icon.ArrowLeft width={14} height={14} /> All students</Link>}
 
-      <div className={cx.card + " p-6"}>
-        <div className="flex flex-wrap items-center gap-5 mb-6">
-          {student.photo ? (
-            // eslint-disable-next-line @next/next/no-img-element -- inline base64 data URL, nothing for next/image to optimize
-            <img src={student.photo} alt={student.name} className="w-16 h-16 rounded-2xl object-cover flex-shrink-0 border border-slate-200 dark:border-white/[0.07]" />
-          ) : (
-            <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-brand-500 to-brand-300 flex items-center justify-center text-white text-xl font-bold flex-shrink-0">
-              {student.avatar || student.name[0]}
+      {/* Hero */}
+      <section className="relative overflow-hidden rounded-3xl bg-ink-950 text-white">
+        <div className="absolute inset-0 grain" />
+        <div className="absolute -top-28 -right-20 w-96 h-96 bg-[radial-gradient(closest-side,rgba(10,159,196,0.35),transparent)]" />
+        <div className="relative p-6 sm:p-8 flex flex-col lg:flex-row lg:items-center gap-6">
+          <div className="flex items-center gap-5 flex-1 min-w-0">
+            <Avatar name={student.name} initials={student.avatar} src={student.photo} size={88} className="!rounded-3xl ring-4 ring-white/10" />
+            <div className="min-w-0">
+              <div className="flex items-center gap-2 flex-wrap">
+                <h2 className="font-display text-2xl sm:text-[28px] font-semibold tracking-tight truncate">{student.name}</h2>
+                {!isActive && <span className="text-[11px] font-semibold px-2 py-0.5 rounded-md bg-white/10 text-ink-300">Inactive</span>}
+              </div>
+              <div className="flex items-center gap-2 mt-2 flex-wrap text-[13px] text-ink-400">
+                <Badge tone={PROGRAM_TONE[student.program] || "slate"}>{student.program}</Badge>
+                <span className="inline-flex items-center gap-1"><Icon.MapPin width={13} height={13} />{student.club || "Unassigned"}</span>
+                {student.age != null && <span>· Age {student.age}</span>}
+                {student.shift && <span>· {title(student.shift)} shift</span>}
+              </div>
+              <div className="flex items-center gap-4 mt-3 text-[13px] text-ink-300 flex-wrap">
+                {student.phone && <a href={`tel:${student.phone}`} className="inline-flex items-center gap-1.5 hover:text-white"><Icon.Phone width={13} height={13} />{student.phone}</a>}
+                <a href={`mailto:${student.email}`} className="inline-flex items-center gap-1.5 hover:text-white truncate"><Icon.Mail width={13} height={13} />{student.email}</a>
+              </div>
             </div>
+          </div>
+          {user.role === "admin" || user.role === "instructor" ? (
+            <div className="flex gap-2 flex-wrap">
+              {user.role === "admin" && <button onClick={() => setResetOpen(true)} className="inline-flex items-center gap-2 text-sm font-semibold px-4 py-2.5 rounded-xl bg-white/[0.07] ring-1 ring-white/10 hover:bg-white/[0.12] transition"><Icon.Key width={15} height={15} /> Reset password</button>}
+              <button onClick={() => setConfirm(true)} className="inline-flex items-center gap-2 text-sm font-semibold px-4 py-2.5 rounded-xl bg-white/[0.07] ring-1 ring-white/10 hover:bg-white/[0.12] transition"><Icon.Power width={15} height={15} /> {isActive ? "Deactivate" : "Reactivate"}</button>
+            </div>
+          ) : null}
+        </div>
+
+        <div className="relative grid grid-cols-2 lg:grid-cols-4 border-t border-white/[0.08] divide-x divide-white/[0.08]">
+          <div className="p-5 sm:px-8 flex items-center gap-4">
+            <svg width="80" height="80" viewBox="0 0 80 80" className="-rotate-90 flex-shrink-0 hidden sm:block" aria-hidden="true">
+              <circle cx="40" cy="40" r={r} fill="none" strokeWidth="8" stroke="rgba(255,255,255,0.08)" />
+              {rate > 0 && <circle cx="40" cy="40" r={r} fill="none" strokeWidth="8" strokeLinecap="round" stroke={rate >= 75 ? "#34D399" : "#EDBE57"} strokeDasharray={`${(rate / 100) * c} ${c}`} />}
+            </svg>
+            <div>
+              <div className="text-[12px] text-ink-400">Attendance</div>
+              <div className="font-display text-2xl font-semibold tabular">{rate == null ? "—" : `${rate}%`}</div>
+              <div className="text-[11.5px] text-ink-500">{present}/{attendance.length} classes</div>
+            </div>
+          </div>
+          <Metric label="Total paid" value={taka(totalPaid)} hint={`${payments.length} receipt${payments.length === 1 ? "" : "s"}`} />
+          <Metric label="Last payment" value={lastPayment ? taka(lastPayment.amount) : "—"} hint={lastPayment ? `${lastPayment.month} · ${lastPayment.date}` : "No payments yet"} />
+          <Metric label="Enrolled" value={fmtDate(student.enrollDate)} hint={`Session ${student.session || "—"}`} />
+        </div>
+      </section>
+
+      {/* Tabs */}
+      <div className="flex gap-1 rounded-xl bg-ink-100 dark:bg-white/5 p-1 w-fit" role="tablist">
+        {[["profile", "Profile", Icon.User], ["payments", `Payments (${payments.length})`, Icon.CreditCard], ["attendance", "Attendance", Icon.Calendar]].map(([k, label, I]) => (
+          <button key={k} role="tab" aria-selected={tab === k} onClick={() => setTab(k)}
+            className={`inline-flex items-center gap-2 px-4 py-2 rounded-lg text-[13px] font-semibold transition ${tab === k ? "bg-white dark:bg-ink-800 text-ink-950 dark:text-white shadow-sm" : "text-ink-500 hover:text-ink-800 dark:hover:text-ink-200"}`}>
+            <I width={14} height={14} /> {label}
+          </button>
+        ))}
+      </div>
+
+      {tab === "profile" && (
+        <div className="grid lg:grid-cols-2 gap-4">
+          <InfoCard title="Guardians" icon={Icon.Users} rows={[
+            ["Guardian", student.guardian], ["Father", student.fatherName], ["Father's mobile", student.fatherMobile], ["Father's occupation", [student.fatherOccupation, student.fatherOccupationType].filter(Boolean).join(" · ")], ["Father's NID", student.fatherNid],
+            ["Mother", student.motherName], ["Mother's mobile", student.motherMobile], ["Mother's occupation", [student.motherOccupation, student.motherOccupationType].filter(Boolean).join(" · ")], ["Mother's NID", student.motherNid],
+          ]} />
+          <div className="space-y-4">
+            <InfoCard title="Personal" icon={Icon.User} rows={[
+              ["Date of birth", student.dob ? fmtDate(student.dob) : null], ["Gender", title(student.gender)], ["Blood group", student.bloodGroup],
+              ["Religion", title(student.religion)], ["Birth registration", student.birthReg], ["School", student.presentSchool],
+            ]} />
+            <InfoCard title="Address" icon={Icon.MapPin} rows={[["Present", student.presentAddress], ["Permanent", student.permanentAddress]]} />
+          </div>
+        </div>
+      )}
+
+      {tab === "payments" && (
+        <div className={cx.card}>
+          {payments.length === 0 ? <EmptyState icon={Icon.CreditCard} title="No payments recorded" /> : (
+            <ul className="divide-y divide-ink-100 dark:divide-white/[0.05]">
+              {payments.map((p) => (
+                <li key={p.id}>
+                  <Link href={`/dashboard/receipt/${p.id}`} className="flex items-center gap-4 px-5 py-4 hover:bg-ink-50/70 dark:hover:bg-white/[0.02] transition-colors">
+                    <span className="w-10 h-10 rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center flex-shrink-0"><Icon.FileText width={17} height={17} /></span>
+                    <div className="flex-1 min-w-0">
+                      <div className="text-sm font-semibold text-ink-900 dark:text-white">{p.month} <span className="font-normal text-ink-500">· {p.type.replace(/_/g, " ")}</span></div>
+                      <div className="text-xs text-ink-500 tabular mt-0.5">{p.receiptNo} · {p.date} · {p.method.replace("_", " ")}</div>
+                    </div>
+                    <div className="font-display font-semibold text-ink-950 dark:text-white tabular">{taka(p.amount)}</div>
+                    <Icon.ChevronRight width={16} height={16} className="text-ink-300" />
+                  </Link>
+                </li>
+              ))}
+            </ul>
           )}
-          <div>
-            <h2 className="text-xl font-display font-semibold tracking-tight text-slate-900 dark:text-slate-100">{student.name}</h2>
-            <div className="flex items-center gap-2 mt-1.5 flex-wrap">
-              <Badge tone={PROGRAM_TONE[student.program] || "slate"}>{student.program}</Badge>
-              <span className="text-xs text-slate-500 dark:text-slate-400">{student.club || "Unassigned"}</span>
-              {student.gender && <span className="text-xs text-slate-400 dark:text-slate-500">· {student.gender === "MALE" ? "Male" : "Female"}</span>}
-            </div>
-          </div>
         </div>
-        <div className="grid grid-cols-2 sm:grid-cols-3 gap-5 pt-5 border-t border-slate-100 dark:border-white/[0.07]">
-          {[
-            ["Age", student.age ?? "—"],
-            ["Guardian", student.guardian || "—"],
-            ["Phone", student.phone || "—"],
-            ["Enrolled", fmtDate(student.enrollDate)],
-            ["Attendance Rate", <span key="r" className={attRate >= 75 ? "text-emerald-600" : attRate > 0 ? "text-red-500" : "text-slate-400 dark:text-slate-500"}>{attendance.length ? `${attRate}%` : "No data"}</span>],
-            ["Total Paid", `৳${totalPaid.toLocaleString()}`],
-          ].map(([lbl, val]) => (
-            <div key={lbl}><div className="text-xs text-slate-400 dark:text-slate-500 font-medium">{lbl}</div><div className="text-sm font-semibold mt-0.5 text-slate-800 dark:text-slate-100">{val}</div></div>
-          ))}
-        </div>
-      </div>
+      )}
 
-      <div className={cx.card}>
-        <div className="px-5 pt-3">
-          <div className="flex gap-1 border-b border-slate-100 dark:border-white/[0.07] -mx-5 px-5">
-            {[["overview", "Profile"], ["payments", "Payments"]].map(([id_, label]) => (
-              <button key={id_} onClick={() => setTab(id_)} className={`px-4 py-3 text-sm font-semibold border-b-2 -mb-px transition-colors ${tab === id_ ? "border-teal text-teal" : "border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:text-slate-300"}`}>
-                {label}
-              </button>
-            ))}
-          </div>
-        </div>
+      {tab === "attendance" && <AttendanceGrid records={attendance} />}
 
-        {tab === "overview" ? (
-          <div className="p-6 space-y-6">
-            <DetailSection title="Address" fields={[
-              ["Present address", student.presentAddress],
-              ["Permanent address", student.permanentAddress],
-            ]} />
-            <DetailSection title="Guardian — Father" fields={[
-              ["Name", student.fatherName], ["NID", student.fatherNid], ["Occupation", student.fatherOccupation],
-              ["Occupation type", student.fatherOccupationType], ["Mobile", student.fatherMobile],
-            ]} />
-            <DetailSection title="Guardian — Mother" fields={[
-              ["Name", student.motherName], ["NID", student.motherNid], ["Occupation", student.motherOccupation],
-              ["Occupation type", student.motherOccupationType], ["Mobile", student.motherMobile],
-            ]} />
-            <DetailSection title="Personal details" fields={[
-              ["Date of birth", fmtDate(student.dob)], ["Birth registration", student.birthReg], ["Blood group", student.bloodGroup],
-              ["Present school", student.presentSchool], ["Religion", student.religion],
-            ]} />
-            <DetailSection title="Admission details" fields={[
-              ["Session", student.session], ["Shift", student.shift],
-            ]} />
-          </div>
-        ) : (
-          <>
-            {payments.length === 0 ? <EmptyState icon={Icon.CreditCard} title="No payments recorded" /> : (
-              <>
-                <div className="sm:hidden divide-y divide-ink-100 dark:divide-white/[0.05]">
-                  {payments.map((p) => (
-                    <Link key={p.id} href={`/dashboard/receipt/${p.id}`} className="flex items-center justify-between gap-3 p-4 active:bg-slate-50 dark:active:bg-slate-700/60">
-                      <div className="min-w-0">
-                        <div className="font-semibold text-slate-800 dark:text-slate-100 truncate">{p.receiptNo}</div>
-                        <div className="text-xs text-slate-400 dark:text-slate-500 mt-0.5">{p.type.replace(/_/g, " ")} · {p.date}</div>
-                      </div>
-                      <div className="font-display font-semibold text-ink-950 dark:text-white flex-shrink-0">৳{p.amount.toLocaleString()}</div>
-                    </Link>
-                  ))}
-                </div>
-                <div className="hidden sm:block overflow-x-auto">
-                  <table className="w-full text-sm">
-                    <thead><tr className={cx.thead}><th className={cx.th}>Receipt</th><th className={cx.th}>Amount</th><th className={cx.th}>Type</th><th className={cx.th}>Date</th><th className={cx.th}>Action</th></tr></thead>
-                    <tbody>
-                      {payments.map((p) => (
-                        <tr key={p.id} className={cx.tr}>
-                          <td className={cx.td + " font-semibold"}>{p.receiptNo}</td>
-                          <td className={cx.td + " font-display font-semibold text-ink-950 dark:text-white"}>৳{p.amount.toLocaleString()}</td>
-                          <td className={cx.td}>{p.type.replace(/_/g, " ")}</td>
-                          <td className={cx.td + " text-slate-400 dark:text-slate-500"}>{p.date}</td>
-                          <td className={cx.td}><Link href={`/dashboard/receipt/${p.id}`} className={cx.link}>View Receipt →</Link></td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              </>
-            )}
-          </>
-        )}
-      </div>
+      {resetOpen && <ResetPasswordModal person={{ userId: student.userId, name: student.name }} onClose={() => setResetOpen(false)} onDone={() => { setResetOpen(false); setToast({ message: `Temporary password set for ${student.name}`, tone: "emerald" }); }} />}
+      <ConfirmDialog open={confirm} title={isActive ? `Deactivate ${student.name}?` : `Reactivate ${student.name}?`}
+        message={isActive ? "They'll be signed out immediately and can't log in. All records are kept." : "They'll be able to sign in again."}
+        confirmLabel={isActive ? "Deactivate" : "Reactivate"} tone={isActive ? "danger" : "primary"} busy={busy} onConfirm={toggleStatus} onCancel={() => setConfirm(false)} />
+      <Toast message={toast?.message} tone={toast?.tone} onClose={() => setToast(null)} />
     </div>
   );
 }
 
-function DetailSection({ title, fields }) {
-  const visible = fields.filter(([, v]) => v);
-  if (visible.length === 0) return null;
+function Metric({ label, value, hint }) {
   return (
-    <div>
-      <h3 className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-3">{title}</h3>
-      <div className="grid sm:grid-cols-2 gap-x-5 gap-y-3">
-        {visible.map(([lbl, val]) => (
-          <div key={lbl}><div className="text-xs text-slate-400 dark:text-slate-500 font-medium">{lbl}</div><div className="text-sm font-semibold mt-0.5 text-slate-800 dark:text-slate-100 whitespace-pre-wrap">{val}</div></div>
-        ))}
+    <div className="p-5 sm:px-8">
+      <div className="text-[12px] text-ink-400">{label}</div>
+      <div className="font-display text-xl sm:text-2xl font-semibold tabular truncate">{value}</div>
+      <div className="text-[11.5px] text-ink-500 truncate">{hint}</div>
+    </div>
+  );
+}
+
+function InfoCard({ title: t, icon: I, rows }) {
+  const visible = rows.filter(([, v]) => v);
+  return (
+    <div className={cx.card + " p-5 sm:p-6"}>
+      <h3 className={cx.cardTitle + " flex items-center gap-2"}><I width={16} height={16} className="text-ink-400" />{t}</h3>
+      {visible.length === 0 ? <p className="text-sm text-ink-400 mt-4">Not provided</p> : (
+        <dl className="mt-4 grid sm:grid-cols-2 gap-x-6 gap-y-4">
+          {visible.map(([l, v]) => (
+            <div key={l} className="min-w-0">
+              <dt className="text-[11.5px] font-medium text-ink-400">{l}</dt>
+              <dd className="text-sm font-medium text-ink-900 dark:text-ink-100 mt-0.5 whitespace-pre-wrap break-words">{v}</dd>
+            </div>
+          ))}
+        </dl>
+      )}
+    </div>
+  );
+}
+
+// Last 12 weeks as a GitHub-style grid: green = present, red = absent, grey = no class.
+function AttendanceGrid({ records }) {
+  const byDate = new Map(records.map((r) => [r.date, r.status]));
+  const today = new Date();
+  // Columns are Sat→Fri weeks (the school week); the last column holds today.
+  const start = new Date(today.getFullYear(), today.getMonth(), today.getDate() - ((today.getDay() + 1) % 7) - 7 * 11);
+  const localKey = (dt) => `${dt.getFullYear()}-${String(dt.getMonth() + 1).padStart(2, "0")}-${String(dt.getDate()).padStart(2, "0")}`;
+  const weeks = [];
+  for (let w = 0; w < 12; w++) {
+    const days = [];
+    for (let d = 0; d < 7; d++) {
+      const dt = new Date(start.getFullYear(), start.getMonth(), start.getDate() + w * 7 + d);
+      const key = localKey(dt);
+      days.push({ key, status: byDate.get(key), future: dt > today });
+    }
+    weeks.push(days);
+  }
+  const recent = records.slice(0, 8);
+
+  return (
+    <div className="grid lg:grid-cols-[auto_1fr] gap-4">
+      <div className={cx.card + " p-5 sm:p-6"}>
+        <h3 className={cx.cardTitle}>Last 12 weeks</h3>
+        <div className="mt-4 flex gap-1.5">
+          <div className="grid grid-rows-7 gap-1.5 text-[10px] text-ink-400 pr-1">
+            {["Sat", "", "Mon", "", "Wed", "", "Fri"].map((d, i) => <span key={i} className="h-4 leading-4">{d}</span>)}
+          </div>
+          {weeks.map((week, i) => (
+            <div key={i} className="grid grid-rows-7 gap-1.5">
+              {week.map((d) => (
+                <span key={d.key} title={`${d.key}${d.status ? ` · ${d.status}` : ""}`}
+                  className={`w-4 h-4 rounded-[4px] ${d.future ? "opacity-0" : d.status === "present" ? "bg-emerald-500" : d.status === "absent" ? "bg-red-400" : "bg-ink-100 dark:bg-white/[0.06]"}`} />
+              ))}
+            </div>
+          ))}
+        </div>
+        <div className="flex items-center gap-4 mt-4 text-[11px] text-ink-500">
+          <span className="inline-flex items-center gap-1.5"><span className="w-3 h-3 rounded-[3px] bg-emerald-500" />Present</span>
+          <span className="inline-flex items-center gap-1.5"><span className="w-3 h-3 rounded-[3px] bg-red-400" />Absent</span>
+          <span className="inline-flex items-center gap-1.5"><span className="w-3 h-3 rounded-[3px] bg-ink-100 dark:bg-white/10" />No record</span>
+        </div>
+      </div>
+      <div className={cx.card}>
+        <div className={cx.cardHeader}><h3 className={cx.cardTitle}>Recent classes</h3></div>
+        {recent.length === 0 ? <EmptyState icon={Icon.Calendar} title="No attendance recorded yet" /> : (
+          <ul className="divide-y divide-ink-100 dark:divide-white/[0.05]">
+            {recent.map((r) => (
+              <li key={r.id} className="px-5 py-3 flex items-center justify-between text-sm">
+                <span className="text-ink-700 dark:text-ink-300 tabular">{new Date(r.date).toLocaleDateString("en-GB", { weekday: "short", day: "numeric", month: "short" })}</span>
+                <Badge dot tone={r.status === "present" ? "emerald" : "red"}>{r.status === "present" ? "Present" : "Absent"}</Badge>
+              </li>
+            ))}
+          </ul>
+        )}
       </div>
     </div>
   );

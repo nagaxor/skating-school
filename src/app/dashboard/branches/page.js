@@ -3,7 +3,8 @@
 import { useState, useEffect } from "react";
 import { api } from "@/lib/api";
 import { Icon } from "@/components/Icons";
-import { Badge, PageLoading, EmptyState, Toast, ModalShell, cx } from "@/components/ui";
+import { Badge, PageLoading, EmptyState, Toast, ModalShell, PageHeader, StatCard, cx } from "@/components/ui";
+import { RinkLines } from "@/components/Brand";
 
 export default function BranchesPage() {
   const [clubs, setClubs] = useState([]);
@@ -16,7 +17,7 @@ export default function BranchesPage() {
   const load = () => api("/api/clubs?all=1").then(setClubs).finally(() => setLoading(false));
   useEffect(() => { load(); }, []);
 
-  const notify = (message, tone = "emerald") => { setToast({ message, tone }); setTimeout(() => setToast(null), 3800); };
+  const notify = (message, tone = "emerald") => setToast({ message, tone });
 
   const addBranch = async (form) => {
     await api("/api/clubs", { method: "POST", body: JSON.stringify(form) });
@@ -57,23 +58,29 @@ export default function BranchesPage() {
 
   return (
     <div className="space-y-5">
-      <div className="flex items-center justify-between gap-3 flex-wrap">
-        <p className="text-sm text-slate-500 dark:text-slate-400 max-w-lg">Branches are the physical clubs students and instructors are assigned to. Deactivate a branch to hide it from new enrollments without deleting its history.</p>
-        <button onClick={() => setShowAdd(true)} className={cx.btnPrimary}><Icon.Plus width={16} height={16} /> Add Branch</button>
-      </div>
+      <PageHeader title="Branches" subtitle="Deactivate a branch to hide it from new admissions without losing its history."
+        actions={<button onClick={() => setShowAdd(true)} className={cx.btnPrimary}><Icon.Plus width={16} height={16} /> Add branch</button>} />
+      {clubs.length > 0 && (
+        <div className="grid grid-cols-3 gap-3 sm:gap-4">
+          <StatCard icon={Icon.Building} label="Active branches" value={clubs.filter((c) => c.status === "active").length} hint={`${clubs.length} total`} tone="brand" />
+          <StatCard icon={Icon.Users} label="Students" value={clubs.reduce((s, c) => s + c.studentCount, 0)} tone="gold" />
+          <StatCard icon={Icon.Shield} label="Instructors" value={clubs.reduce((s, c) => s + c.instructorCount, 0)} tone="slate" />
+        </div>
+      )}
 
       {clubs.length === 0 ? (
         <div className={cx.card}><EmptyState icon={Icon.Building} title="No branches yet" hint="Add your first branch to start assigning students and instructors." /></div>
       ) : (
         <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {clubs.map((c) => (
-            <div key={c.id} className={`${cx.card} p-5 flex flex-col gap-4 transition-opacity ${c.status === "inactive" ? "opacity-60" : ""}`}>
-              <div className="flex items-start justify-between gap-2">
-                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-brand-600 to-brand-400 flex items-center justify-center text-white flex-shrink-0">
-                  <Icon.Building width={18} height={18} />
-                </div>
-                <Badge tone={c.status === "active" ? "emerald" : "slate"}>{c.status === "active" ? "Active" : "Inactive"}</Badge>
+            <div key={c.id} className={`${cx.card} overflow-hidden flex flex-col transition-opacity ${c.status === "inactive" ? "opacity-60" : ""}`}>
+              <div className="relative h-24 bg-ink-950 overflow-hidden">
+                <RinkLines animated={false} className="absolute inset-0 w-full h-full" />
+                <div className="absolute inset-0 grain" />
+                <div className="absolute top-3 right-3"><Badge dot tone={c.status === "active" ? "emerald" : "slate"}>{c.status === "active" ? "Active" : "Inactive"}</Badge></div>
               </div>
+              <div className="px-5 -mt-6 relative"><div className="w-12 h-12 rounded-xl bg-white dark:bg-ink-800 shadow-lift dark:ring-1 dark:ring-white/10 flex items-center justify-center text-brand-600 dark:text-brand-300"><Icon.Building width={20} height={20} /></div></div>
+              <div className="p-5 pt-3 flex flex-col gap-4 flex-1">
               <div>
                 <div className="font-display font-semibold text-ink-950 dark:text-white">{c.name}</div>
                 <div className="text-xs text-slate-500 dark:text-slate-400 flex items-center gap-1 mt-1"><Icon.MapPin width={12} height={12} />{c.location}</div>
@@ -95,6 +102,7 @@ export default function BranchesPage() {
                 >
                   <Icon.Trash width={13} height={13} />
                 </button>
+              </div>
               </div>
             </div>
           ))}

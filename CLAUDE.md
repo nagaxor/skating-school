@@ -185,7 +185,6 @@ to reset it, re-run `db:bootstrap-admin` with a new password).
 - Local DB currently holds **sample data** (3 branches, 3 coaches `coach1-3@local.test` / `Coach-pass-1`, 16 students
   `student1-16@local.test` / `Student-pass-1`, payments, notices, schedule). It was seeded through the API from a scratchpad script, not
   committed. Wipe it with `localdb.py reset` + setup + migrate + bootstrap-admin.
-- The admission form (`/admission`) only got the token/colour pass. Its layout is still the old design (white card) → backlog.
 - `npm audit`: several dev-tooling advisories (brace-expansion, js-yaml, effect, deepmerge-ts). Mostly transitive via eslint/prisma.
 
 ## 7b. Git workflow & restore points
@@ -204,7 +203,6 @@ to reset it, re-run `db:bootstrap-admin` with a new password).
 
 ## 8. Upgrade backlog (prioritized — pick from the top; move to Changelog when done)
 0. **Merge `redesign` → `main`** after the owner reviews it locally (`main` deploys to Vercel); run `prisma migrate deploy` on prod first.
-0. Full restyle of `/admission` (multi-step form) and `students/[id]` detail page to the new layout; student detail: admin "Reset password".
 0. Nonce-based CSP (drop script `'unsafe-inline'`); persistent (DB) per-IP rate limiting.
 1. **Safe patch/minor bumps:** react/react-dom 19.3, zod 4.6, jose 6.2, postcss, autoprefixer, bcryptjs, speed-insights; then `npm audit fix` (non-force).
 2. **Wire up or remove** Vercel Analytics/SpeedInsights in `layout.js` (check the CSP allows it).
@@ -220,6 +218,15 @@ to reset it, re-run `db:bootstrap-admin` with a new password).
 
 ## Changelog
 <!-- Newest first. Format: YYYY-MM-DD — what changed — files touched -->
+- **2026-11-14** — **UI polish round 3.** `/admission` rebuilt: dark brand rail with a clickable stepper and program summary, progress bar,
+  per-step titles, choice chips (program, gender, shift, blood group, occupation type) instead of dropdowns, father/mother cards,
+  a review summary on the last step (validation/submit logic unchanged; the form is always light-themed).
+  **Reports** rebuilt: 3/6/12-month range, revenue trend with gridlines and tooltips, donuts by payment method and fee type,
+  active students by branch/program. **Student detail** rebuilt: dark hero (photo, contact, admin Reset password / Deactivate),
+  metrics (attendance ring, total paid, last payment, enrolled), tabs Profile / Payments / Attendance (12-week Sat→Fri grid).
+  **Settings**: sectioned cards, live receipt-header preview, saves only changed keys (cleaner audit log), discard button.
+  **Branches**: header + stats, rink-motif cards. Files: src/app/admission/page.js, src/app/dashboard/{reports,settings,branches}/page.js,
+  src/app/dashboard/students/[id]/page.js.
 - **2026-11-14** — **Redesign phase 2: premium design + features** (branch `redesign`). New design system (tokens, Sora, logo, rink motif),
   new landing (hero + product preview, programs, why-us, live branches, steps, FAQ), new login, new shell (sidebar, top bar,
   Ctrl+K palette, mobile tabs), new overview (revenue chart, fee ring, student "next class" view). Feature work:

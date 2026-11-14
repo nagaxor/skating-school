@@ -14,7 +14,13 @@
     "db:migrate": "prisma migrate deploy",
     "db:migrate:dev": "prisma migrate dev",
     "db:bootstrap-admin": "node prisma/bootstrap-admin.mjs",
-    "db:deploy": "prisma migrate deploy"
+    "db:deploy": "prisma migrate deploy",
+    "local:db:setup": ".venv\\Scripts\\python.exe scripts/localdb.py setup",
+    "local:db:start": ".venv\\Scripts\\python.exe scripts/localdb.py start",
+    "local:db:stop": ".venv\\Scripts\\python.exe scripts/localdb.py stop",
+    "local:db:status": ".venv\\Scripts\\python.exe scripts/localdb.py status",
+    "local:db:psql": ".venv\\Scripts\\python.exe scripts/localdb.py psql",
+    "local:dev": "npm run local:db:start && npm run dev"
   },
   "dependencies": {
     "@prisma/client": "6.19.2",

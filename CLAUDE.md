@@ -268,6 +268,9 @@ to reset it, re-run `db:bootstrap-admin` with a new password).
 
 ## Changelog
 <!-- Newest first. Format: YYYY-MM-DD — what changed — files touched -->
+- **2026-11-14** — Footer redesign (owner asked to make the Explore column nicer). Four columns: brand + clickable branch chips · Explore (6 pages
+  in a 2-col grid with dot markers) · Get started (lime "Admission form" and subtle "Portal sign in" action buttons) · Contact (icon tiles that
+  turn lime on hover). Shorter footer. On phones the last-page pager button says "Apply now" so the Previous label isn't squeezed. File: SiteShell.js.
 - **2026-11-14** — Compact pass (owner: too much space). wrap 1560 → 1680px with smaller side padding. Section spacing py-16/24 → py-12/16.
   CTA band roughly half the height (smaller title and buttons). The Prev/Next pager is now ONE slim strip (prev left, next right; on the last page a
   lime "Start the admission form" button). Less footer padding. Files: SiteShell.js.

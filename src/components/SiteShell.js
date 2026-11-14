@@ -166,7 +166,7 @@ function Pager() {
             </Link>
           ) : (
             <Link href="/admission" className="group flex items-center gap-2 rounded-xl bg-lime-400 text-ink-950 hover:bg-lime-300 px-4 py-2.5 font-semibold text-[14px] transition">
-              Start the admission form <Icon.ArrowRight width={15} height={15} className="transition-transform group-hover:translate-x-0.5" />
+              <span className="sm:hidden">Apply now</span><span className="hidden sm:inline">Start the admission form</span> <Icon.ArrowRight width={15} height={15} className="transition-transform group-hover:translate-x-0.5" />
             </Link>
           )}
         </div>
@@ -175,28 +175,62 @@ function Pager() {
   );
 }
 
+const footHead = "text-[11px] font-semibold uppercase tracking-[0.14em] text-ink-400 mb-4";
+const footIcon = "w-7 h-7 rounded-lg bg-white/[0.05] ring-1 ring-white/[0.08] flex items-center justify-center flex-shrink-0 text-ink-400 group-hover:bg-lime-400 group-hover:text-ink-950 group-hover:ring-lime-400 transition";
+
 function SiteFooter() {
   return (
     <footer className="border-t border-white/[0.06] pt-10 pb-24 lg:pb-8">
-      <div className={`${wrap} grid sm:grid-cols-2 md:grid-cols-[1.4fr_1fr_1fr] gap-10`}>
+      <div className={`${wrap} grid gap-8 sm:grid-cols-2 lg:grid-cols-[1.3fr_1fr_1fr_1.1fr] lg:gap-10`}>
+        {/* Brand */}
         <div className="max-w-sm">
           <Logo size={34} />
-          <p className="text-[14px] text-ink-400 leading-relaxed mt-4">Professional roller skating coaching since 2020. Uttara · Bashundhara · Aftab Nagar · Gulshan, Dhaka.</p>
-        </div>
-        <div>
-          <h5 className="text-[11px] font-semibold uppercase tracking-[0.14em] text-ink-400 mb-4">Explore</h5>
-          <div className="flex flex-col gap-2.5 text-[14px] text-ink-300">
-            {NAV.map((n) => <Link key={n.href} href={n.href} className="hover:text-lime-400 transition-colors">{n.label}</Link>)}
-            <Link href="/admission" className="hover:text-lime-400 transition-colors">Admission form</Link>
-            <Link href="/login" className="hover:text-lime-400 transition-colors">Portal sign in</Link>
+          <p className="text-[14px] text-ink-400 leading-relaxed mt-4">Professional roller skating coaching since 2020.</p>
+          <div className="mt-4 flex flex-wrap gap-1.5">
+            {["Uttara", "Bashundhara", "Aftab Nagar", "Gulshan"].map((b) => (
+              <Link key={b} href="/branches" className="inline-flex items-center gap-1 text-[12px] font-medium text-ink-300 rounded-full ring-1 ring-white/10 px-2.5 py-1 hover:ring-lime-400/50 hover:text-lime-400 transition">
+                <Icon.MapPin width={11} height={11} /> {b}
+              </Link>
+            ))}
           </div>
         </div>
+
+        {/* Explore: site pages in two columns */}
         <div>
-          <h5 className="text-[11px] font-semibold uppercase tracking-[0.14em] text-ink-400 mb-4">Contact</h5>
+          <h5 className={footHead}>Explore</h5>
+          <ul className="grid grid-cols-2 gap-x-6 gap-y-2.5 text-[14px]">
+            {NAV.map((n) => (
+              <li key={n.href}>
+                <Link href={n.href} className="group inline-flex items-center gap-1.5 text-ink-300 hover:text-white transition-colors">
+                  <span className="w-1 h-1 rounded-full bg-ink-600 group-hover:bg-lime-400 transition-colors" />{n.label}
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </div>
+
+        {/* Get started: actions */}
+        <div>
+          <h5 className={footHead}>Get started</h5>
+          <div className="flex flex-col gap-2">
+            <Link href="/admission" className="group flex items-center justify-between gap-3 rounded-xl bg-lime-400 text-ink-950 px-3.5 py-2.5 text-[14px] font-semibold hover:bg-lime-300 transition">
+              <span className="inline-flex items-center gap-2"><Icon.FileText width={15} height={15} /> Admission form</span>
+              <Icon.ArrowRight width={14} height={14} className="transition-transform group-hover:translate-x-0.5" />
+            </Link>
+            <Link href="/login" className="group flex items-center justify-between gap-3 rounded-xl bg-white/[0.04] ring-1 ring-white/[0.08] px-3.5 py-2.5 text-[14px] font-medium text-ink-200 hover:bg-white/[0.08] transition">
+              <span className="inline-flex items-center gap-2"><Icon.Lock width={15} height={15} className="text-brand-400" /> Portal sign in</span>
+              <Icon.ArrowRight width={14} height={14} className="text-ink-500 transition-transform group-hover:translate-x-0.5" />
+            </Link>
+          </div>
+        </div>
+
+        {/* Contact */}
+        <div>
+          <h5 className={footHead}>Contact</h5>
           <div className="flex flex-col gap-2.5 text-[14px] text-ink-300">
-            <a href={CONTACT.phoneHref} className="inline-flex items-center gap-2 hover:text-lime-400"><Icon.Phone width={14} height={14} /> {CONTACT.phone}</a>
-            <a href={`mailto:${CONTACT.email}`} className="inline-flex items-center gap-2 hover:text-lime-400 break-all"><Icon.Mail width={14} height={14} /> {CONTACT.email}</a>
-            <a href={CONTACT.whatsapp} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 hover:text-lime-400"><Icon.MessageCircle width={14} height={14} /> WhatsApp</a>
+            <a href={CONTACT.phoneHref} className="group inline-flex items-center gap-2.5 hover:text-white"><span className={footIcon}><Icon.Phone width={13} height={13} /></span>{CONTACT.phone}</a>
+            <a href={`mailto:${CONTACT.email}`} className="group inline-flex items-center gap-2.5 hover:text-white break-all"><span className={footIcon}><Icon.Mail width={13} height={13} /></span>{CONTACT.email}</a>
+            <a href={CONTACT.whatsapp} target="_blank" rel="noopener noreferrer" className="group inline-flex items-center gap-2.5 hover:text-white"><span className={footIcon}><Icon.MessageCircle width={13} height={13} /></span>WhatsApp chat</a>
           </div>
         </div>
       </div>

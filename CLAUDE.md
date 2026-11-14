@@ -63,11 +63,9 @@ src/
                          Previous/Next Pager above the footer (driven by NAV order; the last page links to /admission), footer, mobile CTA bar,
                          PageHero, Section, SectionHead, CtaBand, `dark` class tokens. ALL public pages use the dark look.
     site/*Content.js     Home/Programs/Why/Branches/Faq page bodies + PortalPreview (client components)
-    BranchShowcase.js    Branch "open-up" experience (dashboard/branches). Shared-element morph: the panel is revealed by a Web
-                         Animations API clip-path that starts at the clicked card's rect (card hidden meanwhile) and reverses on
-                         close. Motion graphics: rink lanes self-draw (.mg-draw), a lime skater laps the rink (SVG animateMotion + trail),
-                         the name rises letter by letter (.mg-letter), count-up numbers, a program donut, student cards cascade with blur
-                         (.mg-card). Classes live in globals.css "Motion graphics". prefers-reduced-motion → no morph, instant content.
+    BranchView.js        Full-page branch view for /dashboard/branches/[id]: motion-graphics hero (self-drawing rink .mg-draw, lapping
+                         skater via SVG animateMotion, letter-by-letter name .mg-letter, count-ups, program donut, coaches) + roster
+                         (search, program filter, cascading .mg-card student cards → student profile). Classes in globals.css.
     Icons.js, PWARegister.js
   lib/fees.js            PROGRAM_FEES (Beginner 2000 / Intermediate 2500 / Advanced 3000) + balanceHistory() (≤12 months, paid/partial/due
                          by matching monthly_fee payments to "Month YYYY" labels)
@@ -79,7 +77,7 @@ src/
     programs/, why-us/, branches/, how-to-join/, faq/   Separate public pages (server page.js = metadata; content in components/site/*).
                          branches/ reads active clubs from the DB per request (force-dynamic).
     login/, admission/   Public pages (admission = long public application form, incl. photo data URL)
-    dashboard/           Authenticated area: activity (admin audit log), attendance, branches, children/[id] (guardian),
+    dashboard/           Authenticated area: activity (admin audit log), attendance, branches (+ branches/[id] full page), children/[id] (guardian),
                          guardians (admin), fees, notices,
                          payment-history ("Fee Tracker"), profile ("Profile & Security"), receipt/[id], reports,
                          schedule, settings, staff, students, students/[id]
@@ -293,6 +291,11 @@ to reset it, re-run `db:bootstrap-admin` with a new password).
 
 ## Changelog
 <!-- Newest first. Format: YYYY-MM-DD — what changed — files touched -->
+- **2026-11-14** — The owner wants a full page, not a popup. Branch cards now navigate to **/dashboard/branches/[id]** (refreshable,
+  shareable, Back works). Transition: a dark "portal" grows from the clicked card's rect to full screen (WAAPI clip-path, 650ms), then
+  router.push. The new page calls `window.__releaseBranchPortal()` after its first render, so the old list never flashes (8s safety net); the
+  route is prefetched on hover. BranchShowcase.js → BranchView.js (page layout, no modal). RBAC: covered by the /dashboard/branches prefix
+  (branches.manage). Verified: frame sequence, direct load, guardian → No access, unknown id → "Branch not found".
 - **2026-11-14** — The owner wasn't satisfied with the simple slide-over, so it was replaced by **BranchShowcase**: the clicked card morphs into a
   full panel (clip-path from the card's rect, 900ms ease-in-out) with motion graphics (self-drawing rink, lapping skater, letter-by-letter title,
   count-ups, donut, cascading student cards) and reverses back into the card on close. Verified with a frame sequence (80ms → 2.4s + close) on

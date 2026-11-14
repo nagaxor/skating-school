@@ -1,10 +1,10 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+import { useRouter } from "next/navigation";
 import { api } from "@/lib/api";
 import { Icon } from "@/components/Icons";
 import { Badge, PageLoading, EmptyState, Toast, ModalShell, ConfirmDialog, PageHeader, StatCard, cx } from "@/components/ui";
-import BranchShowcase from "@/components/BranchShowcase";
 import { RinkLines } from "@/components/Brand";
 
 export default function BranchesPage() {
@@ -15,24 +15,37 @@ export default function BranchesPage() {
   const [toast, setToast] = useState(null);
   const [busyId, setBusyId] = useState(null);
   const [confirm, setConfirm] = useState(null);
-  // Branch drawer: members are loaded once, on first open, then reused.
-  const [openClub, setOpenClub] = useState(null); // { club, origin: card element }
-  const [members, setMembers] = useState({ students: [], instructors: [], loaded: false, loading: false });
-  const loadMembers = useCallback(() => {
-    setMembers((m) => {
-      if (m.loaded || m.loading) return m;
-      Promise.all([api("/api/students"), api("/api/staff")])
-        .then(([students, staff]) => setMembers({ students, instructors: staff.instructors || [], loaded: true, loading: false }))
-        .catch(() => setMembers((x) => ({ ...x, loading: false })));
-      return { ...m, loading: true };
-    });
-  }, []);
-  const openDrawer = useCallback((club, origin) => { setOpenClub({ club, origin }); loadMembers(); }, [loadMembers]);
-  const closeDrawer = useCallback(() => setOpenClub(null), []);
+  // Card → full page: a dark "portal" grows from the card to fill the screen,
+  // then we navigate. The branch page starts on the same dark stage, so the
+  // hand-off is seamless. Reduced motion → navigate immediately.
+  const router = useRouter();
+  const [leaving, setLeaving] = useState(false);
+  const openBranch = useCallback((club, el) => {
+    const href = `/dashboard/branches/${club.id}`;
+    if (leaving) return;
+    if (window.matchMedia?.("(prefers-reduced-motion: reduce)").matches || !el?.getBoundingClientRect) { router.push(href); return; }
+    setLeaving(true);
+    const r = el.getBoundingClientRect();
+    const portal = document.createElement("div");
+    portal.setAttribute("aria-hidden", "true");
+    Object.assign(portal.style, { position: "fixed", zIndex: "80", left: "0", top: "0", width: "100vw", height: "100vh", background: "#030407", pointerEvents: "none" });
+    portal.innerHTML = `<div style="position:absolute;inset:0;background:radial-gradient(circle at ${r.left + r.width / 2}px ${r.top + r.height / 2}px, rgba(47,107,224,.45), transparent 55%)"></div>`;
+    document.body.appendChild(portal);
+    const from = `inset(${r.top}px ${window.innerWidth - r.right}px ${window.innerHeight - r.bottom}px ${r.left}px round 20px)`;
+    const anim = portal.animate([{ clipPath: from }, { clipPath: "inset(0px 0px 0px 0px round 0px)" }], { duration: 650, easing: "cubic-bezier(0.76, 0, 0.24, 1)", fill: "forwards" });
+    router.prefetch(href);
+    // Hand-off: the branch page calls window.__releaseBranchPortal() once it has
+    // rendered, so the old list never flashes. Safety net in case it never does.
+    window.__releaseBranchPortal = () => {
+      window.__releaseBranchPortal = null;
+      portal.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 500, easing: "ease-out", fill: "forwards" }).finished.then(() => portal.remove());
+    };
+    setTimeout(() => window.__releaseBranchPortal?.(), 8000);
+    anim.finished.then(() => router.push(href));
+  }, [leaving, router]);
 
   const load = () => api("/api/clubs?all=1").then(setClubs).finally(() => setLoading(false));
-  // Prefetch members in the background so the drawer opens with data instantly.
-  useEffect(() => { load(); loadMembers(); }, [loadMembers]);
+  useEffect(() => { load(); }, []);
 
   const notify = (message, tone = "emerald") => setToast({ message, tone });
 
@@ -105,9 +118,10 @@ export default function BranchesPage() {
       ) : (
         <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {clubs.map((c) => (
-            <div key={c.id} role="button" tabIndex={0} aria-label={`Show students of ${c.name}`}
-              onClick={(e) => openDrawer(c, e.currentTarget)}
-              onKeyDown={(e) => { if (e.target === e.currentTarget && (e.key === "Enter" || e.key === " ")) { e.preventDefault(); openDrawer(c, e.currentTarget); } }}
+            <div key={c.id} role="button" tabIndex={0} aria-label={`Open ${c.name}`}
+              onClick={(e) => openBranch(c, e.currentTarget)}
+              onMouseEnter={() => router.prefetch(`/dashboard/branches/${c.id}`)}
+              onKeyDown={(e) => { if (e.target === e.currentTarget && (e.key === "Enter" || e.key === " ")) { e.preventDefault(); openBranch(c, e.currentTarget); } }}
               className={`${cx.card} group overflow-hidden flex flex-col cursor-pointer transition-all duration-300 hover:-translate-y-1 hover:shadow-lift dark:hover:ring-white/[0.16] focus-visible:ring-2 focus-visible:ring-brand-500 ${c.status === "inactive" ? "opacity-60" : ""}`}>
               <div className="relative h-24 bg-ink-950 overflow-hidden">
                 <RinkLines animated={false} className="absolute inset-0 w-full h-full" />
@@ -124,7 +138,7 @@ export default function BranchesPage() {
                 <span className="flex items-center gap-1"><Icon.Users width={13} height={13} />{c.studentCount} student{c.studentCount !== 1 && "s"}</span>
                 <span className="flex items-center gap-1"><Icon.Shield width={13} height={13} />{c.instructorCount} instructor{c.instructorCount !== 1 && "s"}</span>
                 <span className="ml-auto inline-flex items-center gap-1 font-semibold text-brand-700 dark:text-lime-400 opacity-0 -translate-x-1 group-hover:opacity-100 group-hover:translate-x-0 group-focus-visible:opacity-100 transition-all">
-                  View students <Icon.ArrowRight width={12} height={12} />
+                  Open branch <Icon.ArrowRight width={12} height={12} />
                 </span>
               </div>
               <div className="flex items-center gap-2 pt-2 border-t border-slate-100 dark:border-white/[0.07] mt-auto" onClick={(e) => e.stopPropagation()}>
@@ -150,7 +164,6 @@ export default function BranchesPage() {
       {showAdd && <BranchModal title="Add Branch" onClose={() => setShowAdd(false)} onSave={addBranch} />}
       {editing && <BranchModal title="Edit Branch" initial={editing} onClose={() => setEditing(null)} onSave={saveEdit} />}
 
-      {openClub && <BranchShowcase key={openClub.club.id} club={openClub.club} origin={openClub.origin} students={members.students} instructors={members.instructors} loading={members.loading} onClose={closeDrawer} />}
       <ConfirmDialog open={!!confirm} title={confirm?.title} message={confirm?.message} confirmLabel={confirm?.label} tone={confirm?.tone} busy={!!busyId} onConfirm={runConfirm} onCancel={() => setConfirm(null)} />
       <Toast message={toast?.message} tone={toast?.tone} onClose={() => setToast(null)} />
     </div>

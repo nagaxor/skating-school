@@ -140,14 +140,17 @@ to reset it, re-run `db:bootstrap-admin` with a new password).
 - `npm audit`: several dev-tooling advisories (brace-expansion, js-yaml, effect, deepmerge-ts). Mostly transitive via eslint/prisma.
 
 ## 6b. Git workflow & restore points
-- Remote: `origin` = `github.com/ShahriyarH10/skating-school`. **Vercel auto-deploys `main` to production**, so do the work on a branch and merge only when it's verified.
+- Remotes:
+  - `origin` = `github.com/nagaxor/skating-school` (**owner's own repo, kept PRIVATE**). Push here.
+  - `upstream` = `github.com/ShahriyarH10/skating-school` (original, read-only for us; `git fetch upstream` to get its updates).
+- The original repo's Vercel project auto-deploys *its* `main` to production. Do the work on a branch and merge only when it's verified.
 - Working branch: `local-dev-setup`.
 - Before each bigger change, create an annotated tag `checkpoint-YYYY-MM-DD-<topic>` so the owner can roll back:
   - see the code at that point: `git checkout <tag>`
   - undo everything after it on the current branch: `git reset --hard <tag>` (destructive, so confirm first)
 - Tags so far: `checkpoint-2026-11-14-local-setup` (local env + this file).
-- ⚠️ Push status: on 2026-11-14 pushing failed with 403, because the GitHub account `nagaxor` on this PC has no write access to the repo.
-  The commit and tag exist **locally only** until access is fixed; then run `git push -u origin local-dev-setup --follow-tags`.
+- `nagaxor` has no write access to `upstream` (403 on 2026-11-14), which is why the owner's own repo is `origin`.
+- Push: `git push -u origin main local-dev-setup --follow-tags`.
 
 ## 7. Upgrade backlog (prioritized — pick from the top; move to Changelog when done)
 1. **Safe patch/minor bumps:** react/react-dom 19.3, zod 4.6, jose 6.2, postcss, autoprefixer, bcryptjs, speed-insights; then `npm audit fix` (non-force).
@@ -164,6 +167,7 @@ to reset it, re-run `db:bootstrap-admin` with a new password).
 
 ## Changelog
 <!-- Newest first. Format: YYYY-MM-DD — what changed — files touched -->
+- **2026-11-14** — Moved hosting to the owner's own GitHub: renamed `origin`→`upstream` (ShahriyarH10) and added `origin` = nagaxor/skating-school. Merged the repo's existing `test.md` commit into `main` (owner chose to keep it), then merged `main` into `local-dev-setup`. Files: `CLAUDE.md`, `test.md` (from remote).
 - **2026-11-14** — Committed the local setup on branch `local-dev-setup` and tagged `checkpoint-2026-11-14-local-setup`. Push to GitHub failed (403, no write access for `nagaxor`). Added §6b Git workflow. Files: `CLAUDE.md`.
 - **2026-11-14** — Set up the isolated local environment: Python 3.12 `.venv` with `pgserver` (Postgres 16.2), `scripts/localdb.py`
   (setup/start/stop/status/reset/psql on 127.0.0.1:5433), `npm run local:*` scripts, generated local `.env`, added `.env.example`,

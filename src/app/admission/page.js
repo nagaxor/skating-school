@@ -92,7 +92,7 @@ function fieldError(key, form, photo) {
     case "presentSchool": return form.presentSchool.trim().length >= 2 ? "" : "Enter the present school";
     case "gender": return form.gender ? "" : "Select a gender";
     case "shift": return form.shift ? "" : "Select a shift";
-    case "password": return form.password.length >= 8 ? "" : "Use at least 8 characters";
+    case "password": return form.password.length >= 8 && /[A-Za-z]/.test(form.password) && /\d/.test(form.password) ? "" : "Use at least 8 characters, with a letter and a number";
     case "confirmPassword":
       if (!form.confirmPassword) return "Re-enter the password";
       return form.confirmPassword === form.password ? "" : "Passwords don't match";
@@ -521,7 +521,7 @@ export default function AdmissionPage() {
                     <h2 className={sectionTitleCls}>Create your login</h2>
                     <p className="text-xs text-slate-500 -mt-2.5 mb-4">Use <span className="font-medium text-slate-600">{form.email || "the email above"}</span> with this password to sign in anytime and check schedules, attendance, and fee receipts.</p>
                     <div className="space-y-4">
-                      <Field error={err("password")} showError={show("password")} label="Password" required hint="Minimum 8 characters">
+                      <Field error={err("password")} showError={show("password")} label="Password" required hint="At least 8 characters, with a letter and a number">
                         <div className="relative">
                           <input type={showPassword ? "text" : "password"} className={inputCls(show("password")) + " pr-11"} value={form.password} onChange={(e) => u("password", e.target.value)} onBlur={() => touch("password")} />
                           <button type="button" onClick={() => setShowPassword((s) => !s)} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600" tabIndex={-1}>

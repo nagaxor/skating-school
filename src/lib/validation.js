@@ -1,13 +1,22 @@
 import { z } from "zod";
 
 export const emailSchema = z.string().trim().toLowerCase().email().max(254);
-export const passwordSchema = z.string().min(8).max(128);
+// Policy for any NEW password (account creation, admission, password change).
+export const passwordSchema = z.string().min(8, "Use at least 8 characters").max(128)
+  .refine((v) => /[A-Za-z]/.test(v) && /\d/.test(v), "Use at least one letter and one number");
+// Login must accept any existing password, so it is not policy-checked.
+const loginPasswordSchema = z.string().min(1).max(128);
+export const PASSWORD_HINT = "At least 8 characters, with a letter and a number";
+export const isStrongPassword = (v) => typeof v === "string" && v.length >= 8 && v.length <= 128 && /[A-Za-z]/.test(v) && /\d/.test(v);
+// Only real raster images as base64 data URLs (no SVG: it can carry script).
+export const photoDataUrlSchema = z.string().max(400_000)
+  .regex(/^data:image\/(png|jpeg|webp);base64,[A-Za-z0-9+/]+=*$/, "Photo must be a PNG, JPEG or WebP image");
 export const idSchema = z.string().trim().min(1).max(100);
 export const programSchema = z.enum(["Beginner", "Intermediate", "Advanced"]);
 export const paymentMethodSchema = z.enum(["cash", "bkash", "nagad", "rocket", "bank_transfer"]);
 export const paymentTypeSchema = z.enum(["monthly_fee", "admission_fee", "equipment", "event_fee"]);
 
-export const loginSchema = z.object({ email: emailSchema, password: passwordSchema });
+export const loginSchema = z.object({ email: emailSchema, password: loginPasswordSchema });
 export const studentCreateSchema = z.object({
   name: z.string().trim().min(2).max(100), email: emailSchema, password: passwordSchema,
   phone: z.string().trim().max(30).optional().or(z.literal("")),
@@ -37,7 +46,18 @@ export const scheduleCreateSchema = z.object({
   time: z.string().trim().min(3).max(60), program: programSchema,
   clubId: idSchema, instructorId: idSchema,
 });
-export const passwordChangeSchema = z.object({ currentPassword: passwordSchema, newPassword: passwordSchema.refine((v) => /[A-Z]/.test(v) && /[a-z]/.test(v) && /\d/.test(v), "Use upper, lower and number") });
+export const passwordChangeSchema = z.object({ currentPassword: loginPasswordSchema, newPassword: passwordSchema });
+export const studentUpdateSchema = z.object({
+  id: idSchema,
+  name: z.string().trim().min(2).max(100).optional(),
+  phone: z.string().trim().max(30).optional().or(z.literal("")),
+  age: z.coerce.number().int().min(3).max(100).nullable().optional(),
+  guardian: z.string().trim().min(2).max(100).optional(),
+  program: programSchema.optional(),
+  clubId: idSchema.nullable().optional(),
+});
+export const userStatusSchema = z.object({ userId: idSchema, active: z.boolean() });
+export const adminPasswordResetSchema = z.object({ userId: idSchema, password: passwordSchema });
 export const clubCreateSchema = z.object({
   name: z.string().trim().min(2).max(100),
   location: z.string().trim().min(2).max(150),
@@ -102,7 +122,7 @@ export const admissionSchema = z.object({
 
   shift: z.enum(["MORNING", "DAY"]),
   program: programSchema.optional(),
-  photo: z.string().min(1, "Photo is required").max(400_000),
+  photo: photoDataUrlSchema,
 
   agree: z.literal(true, { errorMap: () => ({ message: "You must confirm the information is correct" }) }),
 });

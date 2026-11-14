@@ -1,7 +1,8 @@
 import { db } from "@/lib/db";
 import { getAuthContext, assertSameOrigin } from "@/lib/access";
 import { json } from "@/lib/auth";
-import { instructorCreateSchema, instructorUpdateSchema } from "@/lib/validation";
+import { instructorCreateSchema, instructorUpdateSchema, idSchema } from "@/lib/validation";
+import { audit, initialsOf } from "@/lib/security";
 import bcrypt from "bcryptjs";
 
 export async function GET() {
@@ -20,8 +21,9 @@ export async function POST(request) {
   if (d.clubId && !(await db.club.findUnique({where:{id:d.clubId}}))) return json({error:"Club not found"},400);
   try {
     const hash=await bcrypt.hash(d.password,12);
-    const user=await db.user.create({data:{email:d.email,password:hash,name:d.name,phone:d.phone||null,role:"instructor",avatar:d.name.split(/\s+/).map(n=>n[0]).join("").toUpperCase()}});
+    const user=await db.user.create({data:{email:d.email,password:hash,name:d.name,phone:d.phone||null,role:"instructor",avatar:initialsOf(d.name)}});
     const instructor=await db.instructor.create({data:{userId:user.id,specialization:d.specialization||null,clubId:d.clubId||null}});
+    await audit({actorId:ctx.user.id,action:'staff.create',target:user.id,meta:{name:d.name,role:'instructor'},request});
     return json({id:instructor.id,userId:user.id},201);
   } catch(err){ if(err.code==='P2002') return json({error:'Email already exists'},409); console.error(err); return json({error:'Failed to create instructor'},500); }
 }
@@ -43,7 +45,7 @@ export async function PATCH(request) {
         await tx.user.update({
           where: { id: inst.userId },
           data: {
-            ...(name !== undefined ? { name, avatar: name.split(/\s+/).map((n) => n[0]).join("").toUpperCase() } : {}),
+            ...(name !== undefined ? { name, avatar: initialsOf(name) } : {}),
             ...(phone !== undefined ? { phone: phone || null } : {}),
           },
         });
@@ -56,6 +58,7 @@ export async function PATCH(request) {
         },
       });
     });
+    await audit({ actorId: ctx.user.id, action: "staff.update", target: inst.userId, meta: { fields: Object.keys(parsed.data).filter((k) => k !== "id") }, request });
     return json({ success: true });
   } catch (err) {
     console.error("Update instructor", err);
@@ -67,6 +70,7 @@ export async function DELETE(request) {
   if (!assertSameOrigin(request)) return json({error:'Invalid origin'},403);
   const ctx=await getAuthContext(); if(!ctx || ctx.user.role!=='admin') return json({error:'Forbidden'},403);
   const id=new URL(request.url).searchParams.get('id');
+  if(!idSchema.safeParse(id).success) return json({error:'Invalid id'},400);
   try {
     const inst = await db.instructor.findUnique({
       where: { id },
@@ -84,6 +88,7 @@ export async function DELETE(request) {
       return json({ error: `${inst.user.name} has marked attendance ${inst.user._count.attendanceMarked} time(s), which can't be reassigned. This account can't be deleted.` }, 409);
     }
     await db.user.delete({where:{id:inst.userId}});
+    await audit({actorId:ctx.user.id,action:'staff.delete',target:inst.userId,meta:{name:inst.user.name},request});
     return json({success:true});
   } catch (e) {
     if (e?.code === "P2003" || /foreign key|violates.*constraint/i.test(e?.message || "")) {

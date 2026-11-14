@@ -29,8 +29,10 @@ async function sessionPayload(payload) {
     .sign(getSecret());
 }
 
-export async function signToken(payload) {
-  return sessionPayload(payload);
+// Build the session JWT for a user row. `sv` ties the token to the user's
+// current sessionVersion so it can be revoked server-side.
+export async function signToken(user) {
+  return sessionPayload({ id: user.id, email: user.email, role: user.role, name: user.name, sv: user.sessionVersion ?? 0 });
 }
 
 export async function verifyToken(token) {

@@ -2,6 +2,7 @@ import { db } from "@/lib/db";
 import { getAuthContext, assertSameOrigin } from "@/lib/access";
 import { json } from "@/lib/auth";
 import { idSchema } from "@/lib/validation";
+import { audit } from "@/lib/security";
 
 export async function GET() {
   const ctx = await getAuthContext();
@@ -73,6 +74,7 @@ export async function DELETE(request) {
     }
 
     await db.user.delete({ where: { id: userId } });
+    await audit({ actorId: ctx.user.id, action: "staff.delete", target: userId, meta: { name: target.name, role: target.role }, request });
   } catch (e) {
     // Safety net for any relation on User not explicitly checked above, and
     // for any other unexpected error — never let this escape uncaught, or

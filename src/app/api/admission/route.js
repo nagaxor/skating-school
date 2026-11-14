@@ -3,6 +3,7 @@ import { assertSameOrigin } from "@/lib/access";
 import { json, signToken, setAuthCookie } from "@/lib/auth";
 import { admissionSchema } from "@/lib/validation";
 import { rateLimit } from "@/lib/rate-limit";
+import { audit, clientIp, initialsOf } from "@/lib/security";
 import bcrypt from "bcryptjs";
 
 function ageFromDob(dob) {
@@ -23,7 +24,7 @@ function ageFromDob(dob) {
 export async function POST(request) {
   if (!assertSameOrigin(request)) return json({ error: "Invalid origin" }, 403);
 
-  const ip = request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "unknown";
+  const ip = clientIp(request);
   const limit = rateLimit(`admission:${ip}`, 5, 60 * 60 * 1000);
   if (!limit.ok) return json({ error: "Too many admission attempts. Try again later." }, 429, { "Retry-After": String(limit.retryAfter) });
 
@@ -56,7 +57,7 @@ export async function POST(request) {
           name: data.name,
           phone: data.mobile,
           role: "student",
-          avatar: data.name.split(/\s+/).map((n) => n[0]).join("").toUpperCase(),
+          avatar: initialsOf(data.name),
         },
       });
 
@@ -95,8 +96,8 @@ export async function POST(request) {
     });
 
     // Sign them in immediately — no separate login step required.
-    const token = await signToken({ id: user.id, email: user.email, role: user.role, name: user.name });
-    await setAuthCookie(token, request);
+    await setAuthCookie(await signToken(user), request);
+    await audit({ actorId: user.id, action: "admission.submit", target: user.email, request });
 
     return json({ success: true }, 201);
   } catch (err) {

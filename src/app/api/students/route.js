@@ -1,7 +1,8 @@
 import { db } from "@/lib/db";
 import { getAuthContext, assertSameOrigin } from "@/lib/access";
 import { json } from "@/lib/auth";
-import { studentCreateSchema, idSchema } from "@/lib/validation";
+import { studentCreateSchema, studentUpdateSchema, idSchema } from "@/lib/validation";
+import { audit, initialsOf } from "@/lib/security";
 import bcrypt from "bcryptjs";
 
 export async function GET(request) {
@@ -66,8 +67,9 @@ export async function POST(request) {
   if (clubId && !(await db.club.findUnique({ where: { id: clubId } }))) return json({ error: "Club not found" }, 400);
   try {
     const hash = await bcrypt.hash(data.password, 12);
-    const user = await db.user.create({ data: { email:data.email,password:hash,name:data.name,phone:data.phone||null,role:"student",avatar:data.name.split(/\s+/).map(n=>n[0]).join("").toUpperCase() } });
+    const user = await db.user.create({ data: { email:data.email,password:hash,name:data.name,phone:data.phone||null,role:"student",avatar:initialsOf(data.name) } });
     const student = await db.student.create({ data: { userId:user.id, age:data.age ?? null, guardian:data.guardian, program:data.program || "Beginner", clubId } });
+    await audit({ actorId: ctx.user.id, action: "student.create", target: student.id, meta: { name: data.name }, request });
     return json({ id: student.id, userId: user.id }, 201);
   } catch (err) {
     if (err.code === "P2002") return json({ error: "Email already exists" }, 409);
@@ -83,6 +85,55 @@ export async function DELETE(request) {
   if (!idSchema.safeParse(id).success) return json({ error: "Invalid id" }, 400);
   const student = await db.student.findUnique({ where: { id } });
   if (!student) return json({ error: "Not found" }, 404);
+  const user = await db.user.findUnique({ where: { id: student.userId }, select: { name: true, email: true } });
   await db.user.delete({ where: { id: student.userId } });
+  await audit({ actorId: ctx.user.id, action: "student.delete", target: id, meta: user, request });
   return json({ success: true });
+}
+
+// Edit a student's core details. Admins can edit anyone and move branches;
+// instructors can edit students in their own branch but not move them.
+export async function PATCH(request) {
+  if (!assertSameOrigin(request)) return json({ error: "Invalid origin" }, 403);
+  const ctx = await getAuthContext();
+  if (!ctx || ctx.user.role === "student") return json({ error: "Forbidden" }, 403);
+  const parsed = studentUpdateSchema.safeParse(await request.json());
+  if (!parsed.success) return json({ error: "Invalid student data", details: parsed.error.flatten().fieldErrors }, 400);
+  const { id, name, phone, age, guardian, program, clubId } = parsed.data;
+
+  const student = await db.student.findUnique({ where: { id } });
+  if (!student) return json({ error: "Not found" }, 404);
+  if (ctx.user.role === "instructor") {
+    if (student.clubId !== ctx.user.instructor?.clubId) return json({ error: "Forbidden" }, 403);
+    if (clubId !== undefined && clubId !== student.clubId) return json({ error: "Only an administrator can move a student to another branch" }, 403);
+  }
+  if (clubId && !(await db.club.findUnique({ where: { id: clubId } }))) return json({ error: "Club not found" }, 400);
+
+  try {
+    await db.$transaction(async (tx) => {
+      if (name !== undefined || phone !== undefined) {
+        await tx.user.update({
+          where: { id: student.userId },
+          data: {
+            ...(name !== undefined ? { name, avatar: initialsOf(name) } : {}),
+            ...(phone !== undefined ? { phone: phone || null } : {}),
+          },
+        });
+      }
+      await tx.student.update({
+        where: { id },
+        data: {
+          ...(age !== undefined ? { age } : {}),
+          ...(guardian !== undefined ? { guardian } : {}),
+          ...(program !== undefined ? { program } : {}),
+          ...(clubId !== undefined && ctx.user.role === "admin" ? { clubId } : {}),
+        },
+      });
+    });
+    await audit({ actorId: ctx.user.id, action: "student.update", target: id, meta: { fields: Object.keys(parsed.data).filter((k) => k !== "id") }, request });
+    return json({ success: true });
+  } catch (err) {
+    console.error("Update student", err);
+    return json({ error: "Failed to update student" }, 500);
+  }
 }

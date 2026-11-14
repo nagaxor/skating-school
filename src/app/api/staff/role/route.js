@@ -2,6 +2,7 @@ import { db } from "@/lib/db";
 import { getAuthContext, assertSameOrigin } from "@/lib/access";
 import { json } from "@/lib/auth";
 import { roleChangeSchema } from "@/lib/validation";
+import { audit } from "@/lib/security";
 
 // PATCH { userId, role: "admin" | "instructor" }
 // Transfers a staff member between the admin and instructor roles.
@@ -30,13 +31,14 @@ export async function PATCH(request) {
       if (adminCount <= 1) return json({ error: "Cannot demote the last remaining administrator" }, 400);
 
       await db.$transaction(async (tx) => {
-        await tx.user.update({ where: { id: userId }, data: { role: "instructor" } });
+        await tx.user.update({ where: { id: userId }, data: { role: "instructor", sessionVersion: { increment: 1 } } });
         const existing = await tx.instructor.findUnique({ where: { userId } });
         if (!existing) {
           await tx.instructor.create({ data: { userId, clubId: null, specialization: null } });
         }
       });
 
+      await audit({ actorId: ctx.user.id, action: "staff.role_change", target: userId, meta: { name: target.name, from: "admin", to: "instructor" }, request });
       return json({ success: true, userId, role: "instructor" });
     }
 
@@ -47,9 +49,10 @@ export async function PATCH(request) {
 
     await db.$transaction(async (tx) => {
       if (target.instructor) await tx.instructor.delete({ where: { userId } });
-      await tx.user.update({ where: { id: userId }, data: { role: "admin" } });
+      await tx.user.update({ where: { id: userId }, data: { role: "admin", sessionVersion: { increment: 1 } } });
     });
 
+    await audit({ actorId: ctx.user.id, action: "staff.role_change", target: userId, meta: { name: target.name, from: "instructor", to: "admin" }, request });
     return json({ success: true, userId, role: "admin" });
   } catch (err) {
     console.error("Role transfer failed", err);

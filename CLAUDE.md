@@ -42,7 +42,10 @@ src/
     access.js            getAuthContext() (re-loads user from DB each request; DB errors → null → 401),
                          requireContext(roles), assertSameOrigin(request)  ← call on every state-changing route
     db.js                Prisma singleton
-    validation.js        All Zod schemas
+    validation.js        All Zod schemas. passwordSchema = policy for NEW passwords (8+, letter+number);
+                         login uses a loose schema. photoDataUrlSchema = PNG/JPEG/WebP base64 only (no SVG).
+    security.js          clientIp(request), audit({actorId,action,target,meta,request}) (never throws),
+                         LOCKOUT policy (5 failures → 15 min), initialsOf(name)
     rate-limit.js        In-memory bucket limiter (per process!)
     api.js               Client fetch wrapper (redirects to /login on 401)
     auth-context.js      Client AuthProvider/useAuth
@@ -53,14 +56,16 @@ src/
     login/, admission/   Public pages (admission = long public application form, incl. photo data URL)
     dashboard/           Authenticated area: attendance, branches, fees, notices, payment-history, profile,
                          receipt/[id], reports, schedule, settings, staff, students, students/[id]
-    api/<resource>/route.js   admission, attendance, auth(+password), clubs, health, instructors, notices,
-                              payments, receipts, schedules, settings, staff(+role), students
+    api/<resource>/route.js   admission, attendance, audit, auth(+password, +sessions), clubs, health,
+                              instructors, notices, payments, receipts, schedules, settings, staff(+role),
+                              students, users/status, users/password
 prisma/
   schema.prisma          Models: User(role admin|instructor|student), Instructor, Student, Club, Attendance,
-                         Payment, Schedule, Notice, Setting
-  migrations/            0001_init, 0002_student_admission_details
+                         Payment, Schedule, Notice, Setting, AuditLog
+  migrations/            0001_init, 0002_student_admission_details, 20261114160022_security_hardening
   bootstrap-admin.mjs    Creates/resets one admin from ADMIN_EMAIL/ADMIN_NAME/ADMIN_PASSWORD (≥12 chars)
 scripts/localdb.py       Local isolated Postgres manager (see §4)
+scripts/security-smoke.mjs  E2E security test against the running local app (`npm run test:security`)
 ```
 
 ### API route pattern (follow this for new routes)
@@ -69,11 +74,24 @@ scripts/localdb.py       Local isolated Postgres manager (see §4)
 3. Parse the body with a Zod schema from `validation.js` (`safeParse`, then 400 on failure)
 4. Scope the data: **instructors → only their club; students → only their own records**
 5. Return through `json(...)` (sets `Cache-Control: no-store`)
+6. For any create/update/delete of money, people, roles, or settings, call `await audit({...})` from `lib/security.js`
 
 ### Security model (keep it intact)
 - Roles: `admin` (everything), `instructor` (own club), `student` (self only).
 - CSP and security headers are in `next.config.js`. Adding any external script/CDN means updating the CSP.
 - Public admission is rate-limited and can create only `student` users.
+- **Session revocation:** every JWT has `sv` = `User.sessionVersion`, which `getAuthContext()` checks.
+  Bumping `sessionVersion` kills all of that user's sessions. It is bumped on: password change (current device gets a new cookie),
+  admin password reset, deactivation, role change, and "sign out everywhere" (`DELETE /api/auth/sessions`).
+  `signToken(user)` takes the user ROW (it reads `sessionVersion`), not a hand-built payload.
+- **Login:** a generic error for an unknown email or a wrong password; a dummy bcrypt compare for unknown emails (no timing leak);
+  per-account lockout stored in the DB (`failedLogins`, `lockedUntil`) → 423; plus a per-IP in-memory limit (20 per 15 min).
+- **Accounts:** admins can (de)activate any account and reset passwords (`/api/users/status`, `/api/users/password`);
+  instructors can (de)activate only students in their own branch. Self-changes and removing the last admin are blocked.
+- **Audit log:** `AuditLog` table (actor is SetNull on user delete). Admins read it via `GET /api/audit?cursor=&action=`.
+- Dashboard layout uses `getAuthContext()`, so revoked or deactivated sessions can't render pages either.
+- Headers: CSP (+ object-src none, upgrade-insecure-requests in prod), COOP/CORP same-origin, HSTS in prod.
+  CSP still needs `'unsafe-inline'` for scripts (Next inline runtime + theme script). Nonce-based CSP is in the backlog.
 
 ## 4. Local environment (isolated, nothing installed system-wide)
 
@@ -122,7 +140,9 @@ to reset it, re-run `db:bootstrap-admin` with a new password).
 - `npm run build`
 - `curl http://localhost:3000/api/health` → `{"status":"ok","database":"ok"}`
 - Manually smoke-test login, attendance, payment → receipt, admission, and role restrictions.
-- There are **no automated tests** yet.
+- `ADMIN_EMAIL=... ADMIN_PASSWORD=... npm run test:security`: 23 end-to-end security checks (local only; it refuses a non-localhost URL).
+  It creates and deletes a temporary instructor. Run it after touching auth/access/API code.
+- There are no unit tests yet.
 
 ## 5. Conventions
 - JavaScript only, App Router, `"use client"` pages under dashboard fetch through `src/lib/api.js`.
@@ -167,6 +187,14 @@ to reset it, re-run `db:bootstrap-admin` with a new password).
 
 ## Changelog
 <!-- Newest first. Format: YYYY-MM-DD — what changed — files touched -->
+- **2026-11-14** — **Redesign phase 1: security hardening** (branch `redesign`, restore point `checkpoint-2026-11-14-before-redesign`).
+  Migration `security_hardening` (User.sessionVersion/failedLogins/lockedUntil/lastLoginAt + AuditLog). Session revocation via `sv`,
+  DB-backed login lockout, timing-safe login, password policy (letter+number) for new passwords, raster-only photo validation,
+  audit logging on all sensitive mutations, new endpoints: `DELETE /api/auth/sessions`, `PATCH /api/users/status`,
+  `POST /api/users/password`, `GET /api/audit`, `PATCH /api/students`, `DELETE /api/notices`, `DELETE /api/schedules`.
+  Instructor DELETE now validates its id. Role changes revoke sessions. Extra security headers. Dashboard layout uses getAuthContext.
+  Added `scripts/security-smoke.mjs` (23/23 pass). Files: prisma/schema.prisma, prisma/migrations/*, src/lib/{security,access,auth,validation}.js,
+  src/app/api/**, src/app/dashboard/layout.js, src/app/admission/page.js (password hint), next.config.js, package.json.
 - **2026-11-14** — Moved hosting to the owner's own GitHub: renamed `origin`→`upstream` (ShahriyarH10) and added `origin` = nagaxor/skating-school. Merged the repo's existing `test.md` commit into `main` (owner chose to keep it), then merged `main` into `local-dev-setup`. Files: `CLAUDE.md`, `test.md` (from remote).
 - **2026-11-14** — Committed the local setup on branch `local-dev-setup` and tagged `checkpoint-2026-11-14-local-setup`. Push to GitHub failed (403, no write access for `nagaxor`). Added §6b Git workflow. Files: `CLAUDE.md`.
 - **2026-11-14** — Set up the isolated local environment: Python 3.12 `.venv` with `pgserver` (Postgres 16.2), `scripts/localdb.py`

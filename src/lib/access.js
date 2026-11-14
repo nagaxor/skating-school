@@ -9,7 +9,7 @@ export async function getAuthContext() {
     user = await db.user.findUnique({
       where: { id: String(session.id) },
       select: {
-        id: true, name: true, email: true, role: true, active: true,
+        id: true, name: true, email: true, role: true, active: true, sessionVersion: true,
         instructor: { select: { id: true, clubId: true } },
         student: { select: { id: true, clubId: true } },
       },
@@ -26,6 +26,9 @@ export async function getAuthContext() {
     return null;
   }
   if (!user?.active || user.role !== session.role) return null;
+  // Revoked session (password changed, account deactivated, or "sign out
+  // everywhere"): the token's version no longer matches the user's.
+  if ((session.sv ?? 0) !== user.sessionVersion) return null;
   return { session, user };
 }
 

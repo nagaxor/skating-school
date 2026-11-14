@@ -2,6 +2,7 @@ import { db } from "@/lib/db";
 import { getAuthContext, assertSameOrigin } from "@/lib/access";
 import { json } from "@/lib/auth";
 import { clubCreateSchema, clubUpdateSchema, idSchema } from "@/lib/validation";
+import { audit } from "@/lib/security";
 
 export async function GET(request) {
   const ctx = await getAuthContext();
@@ -47,6 +48,7 @@ export async function POST(request) {
 
   try {
     const club = await db.club.create({ data: parsed.data });
+    await audit({ actorId: ctx.user.id, action: "branch.create", target: club.id, meta: { name: club.name }, request });
     return json({ id: club.id }, 201);
   } catch (err) {
     if (err.code === "P2002") return json({ error: "A branch with this name already exists" }, 409);
@@ -70,6 +72,7 @@ export async function PATCH(request) {
 
   try {
     await db.club.update({ where: { id }, data });
+    await audit({ actorId: ctx.user.id, action: "branch.update", target: id, meta: { name: existing.name, changes: data }, request });
     return json({ success: true });
   } catch (err) {
     if (err.code === "P2002") return json({ error: "A branch with this name already exists" }, 409);
@@ -100,6 +103,7 @@ export async function DELETE(request) {
     }
 
     await db.club.delete({ where: { id } });
+    await audit({ actorId: ctx.user.id, action: "branch.delete", target: id, request });
     return json({ success: true });
   } catch (err) {
     if (err.code === "P2003" || /foreign key|violates.*constraint/i.test(err?.message || "")) {

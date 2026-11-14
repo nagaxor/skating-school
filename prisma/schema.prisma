@@ -41,6 +41,14 @@ model User {
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
+  // Security
+  // sessionVersion is embedded in every JWT ("sv"); bumping it revokes all
+  // existing sessions (password change, deactivation, "sign out everywhere").
+  sessionVersion Int       @default(0) @map("session_version")
+  failedLogins   Int       @default(0) @map("failed_logins")
+  lockedUntil    DateTime? @map("locked_until")
+  lastLoginAt    DateTime? @map("last_login_at")
+
   // Role-specific relations
   instructor   Instructor?
   student      Student?
@@ -48,9 +56,28 @@ model User {
   // Activity
   notices          Notice[]
   attendanceMarked Attendance[] @relation("MarkedBy")
+  auditLogs        AuditLog[]
 
   @@index([role, active])
   @@map("users")
+}
+
+// Append-only record of security-relevant and financial actions.
+model AuditLog {
+  id        String   @id @default(cuid())
+  actorId   String?  @map("actor_id")
+  action    String   // e.g. "auth.login", "payment.create", "student.update"
+  target    String?  // id or short description of the affected record
+  meta      Json?
+  ip        String?
+  createdAt DateTime @default(now()) @map("created_at")
+
+  actor User? @relation(fields: [actorId], references: [id], onDelete: SetNull)
+
+  @@index([createdAt])
+  @@index([actorId, createdAt])
+  @@index([action, createdAt])
+  @@map("audit_logs")
 }
 
 model Instructor {

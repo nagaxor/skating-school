@@ -3,6 +3,7 @@ import { db } from "@/lib/db";
 import { getAuthContext, assertSameOrigin } from "@/lib/access";
 import { json } from "@/lib/auth";
 import { paymentCreateSchema } from "@/lib/validation";
+import { audit } from "@/lib/security";
 
 async function scopeFor(ctx) {
   if (ctx.user.role === "student") return ctx.user.student ? { studentId: ctx.user.student.id } : { id: "__none__" };
@@ -32,6 +33,7 @@ export async function POST(request) {
     const receiptNo=`OSS-${new Date().getFullYear()}-${crypto.randomBytes(4).toString('hex').toUpperCase()}`;
     try {
       const p=await db.payment.create({data:{studentId:d.studentId,amount:d.amount,method:d.method,type:d.type,month:d.month,receiptNo}});
+      await audit({actorId:ctx.user.id,action:'payment.create',target:p.id,meta:{receiptNo,amount:d.amount,method:d.method,type:d.type,month:d.month,student:student.user.name},request});
       return json({id:p.id,receiptNo},201);
     } catch(err){ if(err.code!=='P2002') {console.error(err);return json({error:'Failed to record payment'},500);} }
   }

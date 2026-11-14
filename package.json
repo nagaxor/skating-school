@@ -20,7 +20,8 @@
     "local:db:stop": ".venv\\Scripts\\python.exe scripts/localdb.py stop",
     "local:db:status": ".venv\\Scripts\\python.exe scripts/localdb.py status",
     "local:db:psql": ".venv\\Scripts\\python.exe scripts/localdb.py psql",
-    "local:dev": "npm run local:db:start && npm run dev"
+    "local:dev": "npm run local:db:start && npm run dev",
+    "test:security": "node scripts/security-smoke.mjs"
   },
   "dependencies": {
     "@prisma/client": "6.19.2",

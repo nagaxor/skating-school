@@ -15,6 +15,7 @@ const MENU = [
   { href: "/dashboard", label: "Overview", icon: Icon.Home, perm: "self.profile", hideIf: "portal.children", exact: true },
   { href: "/dashboard", label: "My Children", icon: Icon.Users, perm: "portal.children", exact: true },
   { section: "People" },
+  { href: "/dashboard/admissions/new", label: "New Admission", icon: Icon.FileText, perm: "admissions.create" },
   { href: "/dashboard/students", label: "Students", icon: Icon.Users, perm: "students.create" },
   { href: "/dashboard/guardians", label: "Guardians", icon: Icon.HeartPulse, perm: "guardians.manage" },
   { href: "/dashboard/staff", label: "Staff", icon: Icon.Shield, perm: "staff.manage" },
@@ -98,6 +99,8 @@ export default function DashboardShell({ user, children }) {
     ? { label: "Receipt" }
     : pathname.startsWith("/dashboard/children/")
     ? { label: "My Children" }
+    : pathname === "/dashboard/students/qr-cards"
+    ? { label: "QR Cards" }
     : pathname.startsWith("/dashboard/students/")
     ? { label: "Student" }
     : [...MENU].reverse().find((m) => m.href && visible(m, user.role) && isActive(pathname, m));

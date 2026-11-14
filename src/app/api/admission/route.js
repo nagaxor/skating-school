@@ -3,32 +3,22 @@ import { assertSameOrigin } from "@/lib/access";
 import { json, signToken, setAuthCookie } from "@/lib/auth";
 import { admissionSchema } from "@/lib/validation";
 import { rateLimit } from "@/lib/rate-limit";
-import { audit, clientIp, initialsOf } from "@/lib/security";
-import bcrypt from "bcryptjs";
+import { audit, clientIp } from "@/lib/security";
+import { createAdmission, parseDob } from "@/lib/admission";
 
-function ageFromDob(dob) {
-  if (!dob) return null;
-  const today = new Date();
-  let age = today.getUTCFullYear() - dob.getUTCFullYear();
-  const beforeBirthday = today.getUTCMonth() < dob.getUTCMonth() ||
-    (today.getUTCMonth() === dob.getUTCMonth() && today.getUTCDate() < dob.getUTCDate());
-  if (beforeBirthday) age -= 1;
-  return age;
-}
-
-// Public self-service admission: anyone can submit this form, no login
-// required. Role is hardcoded to `student` and never taken from the
-// request body, so this endpoint can't be used to mint instructor/admin
-// accounts. Rate-limited per IP to deter spam/abuse, same-origin checked
-// like every other mutating route.
+// Public self-service admission (no login). The form's email + password become
+// the PARENT's guardian-portal login and the child is linked to it, so the
+// admission shows up in the guardian portal right away.
+// Roles are hard-coded (student + guardian) and never taken from the body.
+// If the email is already registered we refuse: silently linking a child to an
+// existing account would let anyone attach children to someone else's login.
 export async function POST(request) {
   if (!assertSameOrigin(request)) return json({ error: "Invalid origin" }, 403);
 
-  const ip = clientIp(request);
-  const limit = rateLimit(`admission:${ip}`, 5, 60 * 60 * 1000);
+  const limit = rateLimit(`admission:${clientIp(request)}`, 5, 60 * 60 * 1000);
   if (!limit.ok) return json({ error: "Too many admission attempts. Try again later." }, 429, { "Retry-After": String(limit.retryAfter) });
 
-  const parsed = admissionSchema.safeParse(await request.json());
+  const parsed = admissionSchema.safeParse(await request.json().catch(() => ({})));
   if (!parsed.success) return json({ error: "Please check the form for errors", details: parsed.error.flatten().fieldErrors }, 400);
   const data = parsed.data;
 
@@ -38,70 +28,26 @@ export async function POST(request) {
     if (!club) return json({ error: "Please select a valid branch" }, 400);
     clubId = club.id;
   }
+  const { dob, error } = parseDob(data.dob);
+  if (error) return json({ error }, 400);
 
-  let dob = null;
-  if (data.dob) {
-    dob = new Date(Date.UTC(Number(data.dob.year), Number(data.dob.month) - 1, Number(data.dob.day)));
-    if (dob > new Date()) return json({ error: "Date of birth can't be in the future" }, 400);
+  if (await db.user.findUnique({ where: { email: data.email }, select: { id: true } })) {
+    return json({ error: "An account with this email already exists. Sign in to the portal, or ask the school office to add this child to your account." }, 409);
   }
 
-  const permanentAddress = data.sameAsPresent ? data.presentAddress : data.permanentAddress;
-
   try {
-    const hash = await bcrypt.hash(data.password, 12);
-    const user = await db.$transaction(async (tx) => {
-      const createdUser = await tx.user.create({
-        data: {
-          email: data.email,
-          password: hash,
-          name: data.name,
-          phone: data.mobile,
-          role: "student",
-          avatar: initialsOf(data.name),
-        },
-      });
-
-      await tx.student.create({
-      data: {
-        userId: createdUser.id,
-        clubId,
-        program: data.program || "Beginner",
-        guardian: data.fatherName || data.motherName,
-        age: ageFromDob(dob),
-        presentAddress: data.presentAddress,
-        permanentAddress,
-        fatherName: data.fatherName,
-        fatherNid: data.fatherNid || null,
-        fatherOccupation: data.fatherOccupation || null,
-        fatherOccupationType: data.fatherOccupationType || null,
-        fatherMobile: data.fatherMobile || null,
-        motherName: data.motherName,
-        motherNid: data.motherNid || null,
-        motherOccupation: data.motherOccupation || null,
-        motherOccupationType: data.motherOccupationType || null,
-        motherMobile: data.motherMobile || null,
-        dob,
-        birthReg: data.birthReg || null,
-        bloodGroup: data.bloodGroup || null,
-        presentSchool: data.presentSchool || null,
-        religion: data.religion || null,
-        gender: data.gender,
-        shift: data.shift,
-        session: String(new Date().getFullYear()),
-        photo: data.photo || null,
-      },
-      });
-
-      return createdUser;
+    const parentName = data.fatherName || data.motherName || `${data.name}'s guardian`;
+    const relation = data.fatherName ? "Father" : "Mother";
+    const { student, guardianUser } = await createAdmission(data, {
+      clubId, dob,
+      guardian: { create: { name: parentName, email: data.email, phone: data.mobile, password: data.password, relation } },
     });
 
-    // Sign them in immediately — no separate login step required.
-    await setAuthCookie(await signToken(user), request);
-    await audit({ actorId: user.id, action: "admission.submit", target: user.email, request });
-
+    await setAuthCookie(await signToken(guardianUser), request); // parent lands in their portal
+    await audit({ actorId: guardianUser.id, action: "admission.submit", target: student.id, meta: { name: data.name, guardian: data.email }, request });
     return json({ success: true }, 201);
   } catch (err) {
-    if (err.code === "P2002") return json({ error: "An account with this email already exists. Try logging in instead." }, 409);
+    if (err.code === "P2002") return json({ error: "An account with this email already exists. Try signing in instead." }, 409);
     console.error("Admission error", err);
     return json({ error: "Something went wrong. Please try again." }, 500);
   }

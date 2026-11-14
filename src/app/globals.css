@@ -73,6 +73,7 @@ input, select, textarea, button {
 @keyframes mgCard { to { opacity: 1; transform: none; filter: blur(0); } }
 .mg-float { animation: mgFloat 7s ease-in-out infinite; }
 @keyframes mgFloat { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-16px); } }
+@keyframes scanLine { 0%, 100% { top: 8%; } 50% { top: 92%; } }
 .mg-pulse { animation: mgPulse 2.4s ease-in-out infinite; transform-origin: center; transform-box: fill-box; }
 @keyframes mgPulse { 0%, 100% { opacity: .35; transform: scale(1); } 50% { opacity: 0; transform: scale(2.4); } }
 
@@ -99,5 +100,9 @@ input, select, textarea, button {
     display: flex; align-items: flex-start; justify-content: center;
   }
   .no-print { display: none !important; }
+  /* QR card sheets: keep the grid, don't centre one tall column, keep cards whole */
+  .print-area:has(.qr-sheet) { position: absolute; display: block; }
+  .qr-sheet { display: grid !important; grid-template-columns: repeat(3, 1fr) !important; gap: 8mm !important; }
+  .qr-card { box-shadow: none !important; break-inside: avoid; }
   @page { margin: 12mm; }
 }

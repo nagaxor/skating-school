@@ -189,6 +189,9 @@ console.log("\n— RBAC matrix —");
     ["GET", "/api/guardians", "guardians.manage"], ["POST", "/api/guardians", "guardians.manage"], ["PATCH", "/api/guardians", "guardians.manage"], ["DELETE", "/api/guardians", "guardians.manage"],
     ["GET", "/api/my-children", "portal.children"],
     ["PUT", "/api/settings", "settings.update"],
+    ["POST", "/api/attendance/scan", "attendance.scan"],
+    ["GET", "/api/students/qr", "students.read"], ["POST", "/api/students/qr", "students.qr_rotate"],
+    ["POST", "/api/admissions", "admissions.create"],
   ];
 
   let cells = 0, wrong = [];
@@ -202,6 +205,49 @@ console.log("\n— RBAC matrix —");
     }
   }
   check(`RBAC matrix: ${ENDPOINTS.length} endpoints × ${ROLES.length} roles = ${cells} cells match lib/rbac.js`, wrong.length === 0, wrong.slice(0, 6).join(" | "));
+
+  // ── QR attendance ─────────────────────────────────────────────────────
+  console.log("\n— QR attendance —");
+  const card = await call(`/api/students/qr?id=${stu.data?.id}`, { cookie: A });
+  check("QR card issued with secret token (not the id)", card.status === 200 && /^OSS1:[A-Za-z0-9_-]{24}$/.test(card.data?.payload || "") && !card.data.payload.includes(stu.data?.id));
+  check("guardian can view own child's QR card", (await call(`/api/students/qr?id=${stu.data?.id}`, { cookie: cookies.guardian })).status === 200);
+  const scan1 = await call("/api/attendance/scan", { method: "POST", cookie: cookies.instructor, body: { code: card.data.payload } });
+  check("instructor scan marks present (server date)", scan1.status === 200 && scan1.data?.already === false && /^\d{4}-\d{2}-\d{2}$/.test(scan1.data?.date || ""));
+  const scan2 = await call("/api/attendance/scan", { method: "POST", cookie: cookies.instructor, body: { code: card.data.payload } });
+  check("second scan is idempotent (already)", scan2.status === 200 && scan2.data?.already === true);
+  const rec = await call(`/api/attendance?today=1&studentId=${stu.data?.id}`, { cookie: A });
+  check("record stored as present via qr", rec.data?.[0]?.status === "present" && rec.data?.[0]?.source === "qr");
+  check("garbage QR rejected", (await call("/api/attendance/scan", { method: "POST", cookie: cookies.instructor, body: { code: "hello world" } })).status === 400);
+  check("guardian cannot scan", (await call("/api/attendance/scan", { method: "POST", cookie: cookies.guardian, body: { code: card.data.payload } })).status === 403);
+  const otherStu = await call("/api/students", { method: "POST", cookie: A, body: { name: "Other Branch Kid", email: `rbac-o-${t}@local.test`, password: "Rbac-pass-123", guardian: "Parent" } });
+  made.students.push(otherStu.data?.id);
+  const otherCard = await call(`/api/students/qr?id=${otherStu.data?.id}`, { cookie: A });
+  check("other-branch fixture created", !!otherCard.data?.payload);
+  check("instructor cannot scan another branch's card", (await call("/api/attendance/scan", { method: "POST", cookie: cookies.instructor, body: { code: otherCard.data?.payload } })).status === 404);
+  check("instructor cannot see another branch's card", (await call(`/api/students/qr?id=${otherStu.data?.id}`, { cookie: cookies.instructor })).status === 404);
+  check("instructor cannot mark a past date", (await call("/api/attendance", { method: "POST", cookie: cookies.instructor, body: { date: "2026-01-05", records: [{ studentId: stu.data?.id, status: "absent" }] } })).status === 403);
+  check("admin can correct a past date", (await call("/api/attendance", { method: "POST", cookie: A, body: { date: "2026-01-05", records: [{ studentId: stu.data?.id, status: "absent" }] } })).status === 200);
+  const rot = await call(`/api/students/qr?id=${stu.data?.id}`, { method: "POST", cookie: A });
+  check("re-issue cancels old card", rot.status === 200 && (await call("/api/attendance/scan", { method: "POST", cookie: cookies.instructor, body: { code: card.data.payload } })).status === 404);
+
+  // ── Staff admission ──────────────────────────────────────────────────
+  const admBody = (gAcc) => ({ name: "Admitted Kid", mobile: "01700000000", clubId: club.data?.id, program: "Beginner",
+    presentAddress: "House 1, Road 2, Dhaka", sameAsPresent: true, permanentAddress: "House 1, Road 2, Dhaka",
+    fatherName: "Father Name", fatherNid: "123456", fatherOccupation: "Engineer", fatherOccupationType: "Others", fatherMobile: "01700000001",
+    motherName: "Mother Name", motherNid: "654321", motherOccupation: "Doctor", motherOccupationType: "Govt.", motherMobile: "01700000002",
+    dob: { day: "05", month: "06", year: "2018" }, birthReg: "2018123", bloodGroup: "O+", presentSchool: "Test School",
+    religion: "ISLAM", gender: "MALE", shift: "MORNING", guardianAccount: gAcc });
+  check("instructor cannot create guardian accounts via admission", (await call("/api/admissions", { method: "POST", cookie: cookies.instructor, body: admBody({ mode: "new", name: "X Y", email: `x-${t}@local.test`, password: "Pass-word-1", relation: "Father" }) })).status === 403);
+  const adm = await call("/api/admissions", { method: "POST", cookie: A, body: admBody({ mode: "new", name: "Admit Parent", email: `adm-g-${t}@local.test`, password: "Admit-pass-1", relation: "Father" }) });
+  check("admin admission creates student + guardian + QR", adm.status === 201 && !!adm.data?.studentId && /^OSS1:/.test(adm.data?.qr || "") && adm.data?.guardian?.created);
+  if (adm.data?.studentId) made.students.push(adm.data.studentId);
+  if (adm.data?.guardian?.id) made.users.push(adm.data.guardian.id);
+  const gl = await login(`adm-g-${t}@local.test`, "Admit-pass-1");
+  const kids = await call("/api/my-children", { cookie: gl.cookie });
+  check("admitted child appears in guardian portal", kids.data?.children?.some((c) => c.id === adm.data?.studentId));
+  const insAdm = await call("/api/admissions", { method: "POST", cookie: cookies.instructor, body: admBody({ mode: "none" }) });
+  check("instructor admission pinned to own branch", insAdm.status === 201);
+  if (insAdm.data?.studentId) made.students.push(insAdm.data.studentId);
 
   // cleanup
   for (const s of made.students) if (s) await call(`/api/students?id=${s}`, { method: "DELETE", cookie: A });

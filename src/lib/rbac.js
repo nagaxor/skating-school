@@ -24,6 +24,8 @@ export const PERMISSIONS = {
   "students.update": { group: "Students", label: "Edit student details", scope: "Instructor: own branch" },
   "students.move_branch": { group: "Students", label: "Move a student to another branch" },
   "students.delete": { group: "Students", label: "Delete students permanently" },
+  "students.qr_rotate": { group: "Students", label: "Re-issue a student's QR card", scope: "Instructor: own branch" },
+  "admissions.create": { group: "Students", label: "Full admission from the dashboard", scope: "Linking a guardian also needs guardians.manage" },
   "students.view_ids": { group: "Students", label: "See NID / birth registration numbers", scope: "Student: self · Guardian: linked children" },
 
   // Accounts
@@ -35,7 +37,9 @@ export const PERMISSIONS = {
 
   // Operations
   "attendance.read": { group: "Operations", label: "View attendance", scope: "Same scope as students" },
-  "attendance.mark": { group: "Operations", label: "Mark attendance", scope: "Instructor: own branch" },
+  "attendance.mark": { group: "Operations", label: "Mark attendance (today)", scope: "Instructor: own branch, today only" },
+  "attendance.scan": { group: "Operations", label: "Scan student QR codes for attendance", scope: "Instructor: own branch, today only" },
+  "attendance.backdate": { group: "Operations", label: "Mark or correct attendance for other dates" },
   "payments.read": { group: "Operations", label: "View payments & receipts", scope: "Same scope as students" },
   "payments.create": { group: "Operations", label: "Record payments", scope: "Instructor: own branch" },
   "schedules.read": { group: "Operations", label: "View class schedule", scope: "Own / children's branches" },
@@ -65,7 +69,8 @@ export const ROLE_PERMISSIONS = {
   instructor: [
     "students.read", "students.create", "students.update",
     "users.set_status",
-    "attendance.read", "attendance.mark",
+    "attendance.read", "attendance.mark", "attendance.scan",
+    "students.qr_rotate", "admissions.create",
     "payments.read", "payments.create", "fees.track",
     "schedules.read", "schedules.create", "schedules.delete",
     "notices.read", "notices.create", "notices.delete",
@@ -93,7 +98,8 @@ export function can(role, permission) {
 
 // Dashboard pages → permission needed to open them (longest prefix wins).
 export const ROUTE_PERMISSIONS = [
-  { path: "/dashboard/students", perm: "students.create" },        // staff list; guardians/students use their own views
+  { path: "/dashboard/students", perm: "students.create" },
+  { path: "/dashboard/admissions", perm: "admissions.create" },        // staff list; guardians/students use their own views
   { path: "/dashboard/guardians", perm: "guardians.manage" },
   { path: "/dashboard/staff", perm: "staff.manage" },
   { path: "/dashboard/branches", perm: "branches.manage" },

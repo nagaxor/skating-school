@@ -9,6 +9,7 @@ import { Icon } from "@/components/Icons";
 import { Badge, PageLoading, EmptyState, Avatar, ConfirmDialog, Toast, cx } from "@/components/ui";
 import { ResetPasswordModal } from "@/components/AccountActions";
 import AttendanceGrid from "@/components/AttendanceGrid";
+import QrCardModal from "@/components/QrCardModal";
 import { can } from "@/lib/rbac";
 
 const PROGRAM_TONE = { Beginner: "brand", Intermediate: "lime", Advanced: "slate" };
@@ -26,6 +27,7 @@ export default function StudentDetailPage() {
   const [notFound, setNotFound] = useState(false);
   const [tab, setTab] = useState("profile");
   const [resetOpen, setResetOpen] = useState(false);
+  const [qrOpen, setQrOpen] = useState(false);
   const [confirm, setConfirm] = useState(false);
   const [busy, setBusy] = useState(false);
   const [toast, setToast] = useState(null);
@@ -83,12 +85,13 @@ export default function StudentDetailPage() {
               </div>
               <div className="flex items-center gap-4 mt-3 text-[13px] text-ink-300 flex-wrap">
                 {student.phone && <a href={`tel:${student.phone}`} className="inline-flex items-center gap-1.5 hover:text-white"><Icon.Phone width={13} height={13} />{student.phone}</a>}
-                <a href={`mailto:${student.email}`} className="inline-flex items-center gap-1.5 hover:text-white truncate"><Icon.Mail width={13} height={13} />{student.email}</a>
+                {!student.email?.endsWith("@no-login.invalid") && <a href={`mailto:${student.email}`} className="inline-flex items-center gap-1.5 hover:text-white truncate"><Icon.Mail width={13} height={13} />{student.email}</a>}
               </div>
             </div>
           </div>
           {can(user.role, "users.set_status") ? (
             <div className="flex gap-2 flex-wrap">
+              <button onClick={() => setQrOpen(true)} className="inline-flex items-center gap-2 text-sm font-semibold px-4 py-2.5 rounded-xl bg-lime-400 text-ink-950 hover:bg-lime-300 transition"><Icon.Command width={15} height={15} /> QR card</button>
               {can(user.role, "users.reset_password") && <button onClick={() => setResetOpen(true)} className="inline-flex items-center gap-2 text-sm font-semibold px-4 py-2.5 rounded-xl bg-white/[0.07] ring-1 ring-white/10 hover:bg-white/[0.12] transition"><Icon.Key width={15} height={15} /> Reset password</button>}
               <button onClick={() => setConfirm(true)} className="inline-flex items-center gap-2 text-sm font-semibold px-4 py-2.5 rounded-xl bg-white/[0.07] ring-1 ring-white/10 hover:bg-white/[0.12] transition"><Icon.Power width={15} height={15} /> {isActive ? "Deactivate" : "Reactivate"}</button>
             </div>
@@ -163,6 +166,7 @@ export default function StudentDetailPage() {
 
       {tab === "attendance" && <AttendanceGrid records={attendance} />}
 
+      {qrOpen && <QrCardModal studentId={student.id} canRotate={can(user.role, "students.qr_rotate")} onClose={() => setQrOpen(false)} />}
       {resetOpen && <ResetPasswordModal person={{ userId: student.userId, name: student.name }} onClose={() => setResetOpen(false)} onDone={() => { setResetOpen(false); setToast({ message: `Temporary password set for ${student.name}`, tone: "emerald" }); }} />}
       <ConfirmDialog open={confirm} title={isActive ? `Deactivate ${student.name}?` : `Reactivate ${student.name}?`}
         message={isActive ? "They'll be signed out immediately and can't log in. All records are kept." : "They'll be able to sign in again."}

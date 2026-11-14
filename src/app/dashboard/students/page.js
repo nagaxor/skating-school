@@ -113,7 +113,9 @@ export default function StudentsPage() {
         subtitle={`${counts.active} active · ${counts.inactive} inactive`}
         actions={canManage && (
           <>
+            <Link href="/dashboard/students/qr-cards" className={cx.btnSecondary}><Icon.Command width={15} height={15} /> QR cards</Link>
             <button onClick={exportCsv} disabled={!filtered.length} className={cx.btnSecondary}><Icon.Download width={15} height={15} /> Export</button>
+            {can(user.role, "admissions.create") && <Link href="/dashboard/admissions/new" className={cx.btnBrand}><Icon.FileText width={15} height={15} /> New admission</Link>}
             <button onClick={() => setModal({ type: "add" })} className={cx.btnPrimary}><Icon.Plus width={16} height={16} /> Add student</button>
           </>
         )}
@@ -178,7 +180,7 @@ export default function StudentsPage() {
                           <Avatar name={s.name} initials={s.avatar} size={34} />
                           <div className="min-w-0">
                             <div className="font-semibold text-ink-900 dark:text-white group-hover:text-brand-700 dark:group-hover:text-brand-300 truncate">{s.name}</div>
-                            <div className="text-xs text-ink-500 truncate">{s.age != null ? `Age ${s.age} · ` : ""}{s.phone || s.email}</div>
+                            <div className="text-xs text-ink-500 truncate">{s.age != null ? `Age ${s.age} · ` : ""}{s.phone || (s.email?.endsWith("@no-login.invalid") ? "" : s.email)}</div>
                           </div>
                         </Link>
                       </td>

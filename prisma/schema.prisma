@@ -156,6 +156,11 @@ model Student {
   shift   String?
   photo   String? @db.Text // data URL, capped client+server side at ~200KB source image
 
+  // Attendance QR: a random secret (NOT the id), generated on first use and
+  // rotatable, so a lost or leaked card can be cancelled.
+  qrToken    String?   @unique @map("qr_token")
+  qrIssuedAt DateTime? @map("qr_issued_at")
+
   user       User         @relation(fields: [userId], references: [id], onDelete: Cascade)
   club       Club?        @relation(fields: [clubId], references: [id])
   attendance Attendance[]
@@ -184,6 +189,8 @@ model Attendance {
   id        String   @id @default(cuid())
   date      DateTime @db.Date
   status    String   // "present" | "absent"
+  source    String   @default("manual") // "manual" | "qr"
+  scannedAt DateTime? @map("scanned_at")
   studentId String   @map("student_id")
   markedById String  @map("marked_by_id")
   createdAt DateTime @default(now()) @map("created_at")

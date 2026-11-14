@@ -7,6 +7,7 @@ import { useAuth } from "@/lib/auth-context";
 import { Icon } from "@/components/Icons";
 import { Avatar, Badge, EmptyState, PageLoading, cx } from "@/components/ui";
 import AttendanceGrid from "@/components/AttendanceGrid";
+import QrCardModal from "@/components/QrCardModal";
 import { useMyChildren, TODAY, taka } from "@/components/GuardianHome";
 import { can } from "@/lib/rbac";
 
@@ -18,6 +19,7 @@ export default function ChildPage() {
   const { user } = useAuth();
   const { data, error } = useMyChildren();
   const [tab, setTab] = useState("attendance");
+  const [qrOpen, setQrOpen] = useState(false);
 
   if (!can(user.role, "portal.children")) return <div className={cx.card}><EmptyState icon={Icon.Lock} title="This page is for guardians" /></div>;
   if (error) return <div className={cx.card}><EmptyState icon={Icon.AlertTriangle} title="Couldn't load" hint={error} /></div>;
@@ -54,8 +56,13 @@ export default function ChildPage() {
           <div className="flex-1 min-w-0">
             <h2 className="font-display text-2xl sm:text-[28px] font-semibold tracking-tight">{k.name}</h2>
             <div className="text-[13.5px] text-ink-400 mt-1">{k.program}{k.age != null ? ` · Age ${k.age}` : ""} · {k.club?.name || "No branch"}{k.club?.location ? `, ${k.club.location}` : ""}</div>
-            <div className="mt-3 inline-flex items-center gap-2 rounded-full px-3 py-1.5 text-[12.5px] font-semibold bg-white/[0.07] ring-1 ring-white/10">
-              <span className={`w-2 h-2 rounded-full ${t.dot}`} /> {t.label}
+            <div className="mt-3 flex flex-wrap items-center gap-2">
+              <span className="inline-flex items-center gap-2 rounded-full px-3 py-1.5 text-[12.5px] font-semibold bg-white/[0.07] ring-1 ring-white/10">
+                <span className={`w-2 h-2 rounded-full ${t.dot}`} /> {t.label}
+              </span>
+              <button onClick={() => setQrOpen(true)} className="inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[12.5px] font-semibold bg-lime-400 text-ink-950 hover:bg-lime-300 transition">
+                <Icon.Command width={13} height={13} /> Attendance QR card
+              </button>
             </div>
           </div>
         </div>
@@ -152,6 +159,7 @@ export default function ChildPage() {
           )}
         </div>
       )}
+      {qrOpen && <QrCardModal studentId={k.id} onClose={() => setQrOpen(false)} />}
     </div>
   );
 }

@@ -140,3 +140,16 @@ export const guardianLinkSchema = z.object({
   link: z.object({ studentId: idSchema, relation: relationSchema.default("Guardian") }).optional(),
   unlink: idSchema.optional(),
 }).refine((v) => !!v.link !== !!v.unlink, "Provide exactly one of link or unlink");
+
+// Staff admission (dashboard): same student fields as the public form, but no
+// student login, an optional photo, and a choice for the guardian portal.
+export const staffAdmissionSchema = admissionSchema
+  .omit({ email: true, password: true, agree: true, photo: true })
+  .extend({
+    photo: photoDataUrlSchema.optional().or(z.literal("")),
+    guardianAccount: z.discriminatedUnion("mode", [
+      z.object({ mode: z.literal("none") }),
+      z.object({ mode: z.literal("new"), name: z.string().trim().min(2).max(100), email: emailSchema, phone: z.string().trim().max(30).optional().or(z.literal("")), password: passwordSchema, relation: relationSchema }),
+      z.object({ mode: z.literal("existing"), guardianId: idSchema, relation: relationSchema }),
+    ]),
+  });

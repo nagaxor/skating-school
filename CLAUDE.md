@@ -196,7 +196,34 @@ to reset it, re-run `db:bootstrap-admin` with a new password).
   Fees (their children's receipts), Schedule and Notices (their children's branches) and Profile. Everything is read-only.
 - `/api/my-children` deliberately omits NID / birth-registration numbers.
 - Local sample guardians: `guardian1@local.test` (2 children), `guardian2@local.test` (2), `guardian3@local.test` (1); password `Guardian-pass-1`.
-- Not built yet: online admission does NOT create a guardian account (it still creates a student login). The admin links guardians manually. → backlog
+- Online admission now creates the guardian account automatically (see 4b2). "Enroll another child" from the portal is still in the backlog.
+
+## 4b2. Admissions, QR cards & scan attendance (2026-11-15)
+- **Admission creates a GUARDIAN login, not a student login.** `lib/admission.js` `createAdmission()` is shared by:
+  - Public `/admission` (`POST /api/admission`): the form's email and password become the parent's guardian account, linked to the child, and the
+    parent is signed in. An already-registered email → 409 (never silently link to an existing account).
+  - Staff `/dashboard/admissions/new` (`POST /api/admissions`, perm `admissions.create`): same form via `components/AdmissionForm.js`
+    `mode="staff"` (photo optional), with a last step "Guardian portal": create new / link existing / skip. Creating or linking needs
+    `guardians.manage` (admin). Instructors admit into their own branch with mode none. The success screen shows guardian credentials once + the QR card.
+  - Student users get a placeholder email `student.<hex>@no-login.invalid` + a random password (children don't sign in). The UI hides those emails.
+- **QR cards:** `Student.qrToken` (random 144-bit, base64url, unique) + `qrIssuedAt`. The QR encodes `OSS1:<token>`, NEVER the id. Created lazily
+  (`ensureTokens`) or at admission. `GET /api/students/qr?id=|?club=` (scoped like students.read; guardians see their own children's cards),
+  `POST /api/students/qr?id=` re-issues (perm `students.qr_rotate`), which cancels the old card. QR images are rendered in the browser with
+  `qrcode` (`components/QrCard.js`, printable card). Pages: student detail "QR card" button (QrCardModal), guardian child page "Attendance QR card",
+  `/dashboard/students/qr-cards` (print a branch's cards; print CSS `.qr-sheet` in globals.css).
+- **Scan attendance:** `POST /api/attendance/scan {code}` (perm `attendance.scan`, scope-checked, 240/min per user). The **date is always the
+  server's today in Asia/Dhaka** (`todayDhaka()` in lib/qr.js); upsert present, `source:"qr"`, `scannedAt`; idempotent (`already:true`); audited.
+  An out-of-scope card → 404. UI: the Attendance page "Scan QR" tab (`components/QrScanner.js`: camera + `jsqr`, ~8 fps, USB-scanner/typed input,
+  beep + vibration, per-card 4s de-dupe, "Just scanned" / "Not here yet").
+- **Manual attendance is today-only** unless `attendance.backdate` (admin): the server rejects other dates with 403; the instructor UI shows
+  "Date is set automatically". Attendance rows carry `source` (manual|qr).
+- Camera: Permissions-Policy `camera=(self)` in next.config.js (it was `camera=()`, which blocked getUserMedia).
+- Packages added with owner approval: `qrcode@1.5.4`, `jsqr@1.4.0`.
+- Verified: security smoke 66/66 (incl. scan scope, idempotency, re-issue, today-only, admission guardian rules); a real camera test (headless
+  Chrome with a fake camera feed of a QR card → student marked present); public admission → guardian portal; `npm run build` OK.
+- Local migration note: `prisma migrate dev` is interactive (fails in this terminal) → generate SQL with `prisma migrate diff --from-migrations
+  ... --shadow-database-url postgresql://skating:skating_local@127.0.0.1:5433/skating_shadow --script` into a new migration folder, then
+  `prisma migrate deploy`. The shadow DB `skating_shadow` exists locally.
 
 ## 4c. SEO
 - `lib/seo.js`: SITE_URL (from **NEXT_PUBLIC_APP_URL**, which MUST be the real https origin in production *before the build*: robots,
@@ -274,7 +301,7 @@ to reset it, re-run `db:bootstrap-admin` with a new password).
 
 ## 8. Upgrade backlog (prioritized — pick from the top; move to Changelog when done)
 0. **Merge `redesign` → `main`** after the owner reviews it locally (`main` deploys to Vercel); run `prisma migrate deploy` on prod first.
-0. Admission → create/link a guardian account automatically (and "enroll another child" from the guardian portal).
+0. "Enroll another child" from the guardian portal (signed-in parent → admission linked to their account).
 0. Guardian notifications (SMS/WhatsApp when a child is marked absent or a fee is due).
 0. Nonce-based CSP (drop script `'unsafe-inline'`); persistent (DB) per-IP rate limiting.
 1. **Safe patch/minor bumps:** react/react-dom 19.3, zod 4.6, jose 6.2, postcss, autoprefixer, bcryptjs, speed-insights; then `npm audit fix` (non-force).
@@ -291,6 +318,12 @@ to reset it, re-run `db:bootstrap-admin` with a new password).
 
 ## Changelog
 <!-- Newest first. Format: YYYY-MM-DD — what changed — files touched -->
+- **2026-11-15** — **Admissions + QR attendance.** Staff admission page with a guardian-account step; the public admission creates a guardian login;
+  student QR cards (secret token, re-issue, print sheet, guardian view); scan attendance with a camera or USB scanner; server-side Dhaka "today";
+  instructors locked to today. Migration `20261114180000_attendance_qr`. RBAC +4 permissions (attendance.scan, attendance.backdate,
+  students.qr_rotate, admissions.create) + route /dashboard/admissions. Files: lib/{qr,admission,rbac,validation}.js, api/{admission,admissions,
+  attendance,attendance/scan,students/qr}, components/{AdmissionForm,QrCard,QrCardModal,QrScanner}.js, dashboard/{attendance,admissions/new,
+  students/qr-cards,students/[id],children/[id],students}, DashboardShell.js, next.config.js, globals.css, package.json, scripts/security-smoke.mjs.
 - **2026-11-14** — The owner wants a full page, not a popup. Branch cards now navigate to **/dashboard/branches/[id]** (refreshable,
   shareable, Back works). Transition: a dark "portal" grows from the clicked card's rect to full screen (WAAPI clip-path, 650ms), then
   router.push. The new page calls `window.__releaseBranchPortal()` after its first render, so the old list never flashes (8s safety net); the

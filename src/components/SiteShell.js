@@ -12,7 +12,7 @@ import { CONTACT, NAV } from "@/lib/site-content";
 
 // ONE container for every public page, so all edges line up and wide
 // screens are used well (1560px cap; side padding grows with the screen).
-export const wrap = "w-full max-w-[1560px] mx-auto px-5 sm:px-8 lg:px-12 2xl:px-16";
+export const wrap = "w-full max-w-[1680px] mx-auto px-4 sm:px-6 lg:px-8 2xl:px-10";
 
 export const dark = {
   card: "rounded-3xl bg-white/[0.03] ring-1 ring-white/[0.08]",
@@ -106,7 +106,7 @@ export function PageHero({ eyebrow, title, text, children }) {
 }
 
 export function Section({ children, className = "" }) {
-  return <section className={`relative py-16 sm:py-24 ${className}`}><div className={wrap}>{children}</div></section>;
+  return <section className={`relative py-12 sm:py-16 ${className}`}><div className={wrap}>{children}</div></section>;
 }
 
 export function SectionHead({ eyebrow, title, text, center = false }) {
@@ -121,19 +121,19 @@ export function SectionHead({ eyebrow, title, text, center = false }) {
 
 export function CtaBand({ title = "Ready to start skating?", text = "Admission is open for all ages. It takes about five minutes." }) {
   return (
-    <Section>
-      <div className="relative overflow-hidden rounded-[2rem] ring-1 ring-white/10 bg-gradient-to-br from-brand-700 via-brand-800 to-ink-950 px-6 sm:px-14 py-12 sm:py-16">
+    <Section className="!py-6 sm:!py-8">
+      <div className="relative overflow-hidden rounded-2xl ring-1 ring-white/10 bg-gradient-to-br from-brand-700 via-brand-800 to-ink-950 px-5 sm:px-8 py-6 sm:py-7">
         <RinkLines animated={false} className="absolute inset-0 w-full h-full opacity-40" />
         <div className="absolute inset-0 grain" />
-        <div className="absolute -right-20 -bottom-24 w-96 h-96 bg-[radial-gradient(closest-side,rgba(212,255,36,0.22),transparent)]" />
-        <div className="relative flex flex-col lg:flex-row lg:items-center justify-between gap-8">
+        <div className="absolute -right-20 -bottom-24 w-80 h-80 bg-[radial-gradient(closest-side,rgba(212,255,36,0.2),transparent)]" />
+        <div className="relative flex flex-col md:flex-row md:items-center justify-between gap-5">
           <div className="max-w-xl">
-            <h2 className="font-display text-3xl sm:text-4xl font-semibold tracking-[-0.03em] text-balance">{title}</h2>
-            <p className="text-brand-100/80 text-[16px] mt-3">{text}</p>
+            <h2 className="font-display text-xl sm:text-2xl font-semibold tracking-[-0.02em] text-balance">{title}</h2>
+            <p className="text-brand-100/80 text-[14.5px] mt-1.5">{text}</p>
           </div>
-          <div className="flex flex-wrap gap-3">
-            <Link href="/admission" className={dark.ctaLime}>Start admission <Icon.ArrowRight width={16} height={16} className="transition-transform group-hover:translate-x-0.5" /></Link>
-            <a href={CONTACT.whatsapp} target="_blank" rel="noopener noreferrer" className={dark.ctaGhost}><Icon.MessageCircle width={16} height={16} className="text-lime-400" /> WhatsApp</a>
+          <div className="flex flex-wrap gap-2.5">
+            <Link href="/admission" className="group inline-flex items-center gap-2 bg-lime-400 hover:bg-lime-300 text-ink-950 font-semibold text-sm px-5 py-3 rounded-xl transition">Start admission <Icon.ArrowRight width={15} height={15} className="transition-transform group-hover:translate-x-0.5" /></Link>
+            <a href={CONTACT.whatsapp} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 bg-white/[0.08] hover:bg-white/[0.14] ring-1 ring-white/10 text-white font-semibold text-sm px-5 py-3 rounded-xl transition"><Icon.MessageCircle width={15} height={15} className="text-lime-400" /> WhatsApp</a>
           </div>
         </div>
       </div>
@@ -149,25 +149,27 @@ function Pager() {
   const prev = NAV[i - 1];
   const next = NAV[i + 1];
   return (
-    <nav aria-label="Page navigation" className="pb-16">
-      <div className={`${wrap} grid sm:grid-cols-2 gap-4`}>
-        {prev ? (
-          <Link href={prev.href} className="group rounded-2xl ring-1 ring-white/[0.08] bg-white/[0.02] hover:bg-white/[0.05] hover:ring-white/[0.16] p-5 sm:p-6 flex items-center gap-4 transition">
-            <span className="w-11 h-11 rounded-xl bg-white/[0.06] flex items-center justify-center flex-shrink-0 transition-transform group-hover:-translate-x-0.5"><Icon.ArrowLeft width={18} height={18} /></span>
-            <span className="min-w-0"><span className="block text-[12px] font-semibold uppercase tracking-[0.12em] text-ink-400">Previous</span><span className="block font-display text-lg font-semibold">{prev.label}</span><span className="block text-[13px] text-ink-400 truncate">{prev.blurb}</span></span>
-          </Link>
-        ) : null}
-        {next ? (
-          <Link href={next.href} className={`${prev ? "" : "sm:col-span-2 "}group rounded-2xl ring-1 ring-lime-400/30 bg-lime-400/[0.06] hover:bg-lime-400/[0.1] hover:ring-lime-400/60 p-5 sm:p-6 flex items-center justify-end gap-4 text-right transition`}>
-            <span className="min-w-0"><span className="block text-[12px] font-semibold uppercase tracking-[0.12em] text-lime-400">Next</span><span className="block font-display text-lg font-semibold">{next.label}</span><span className="block text-[13px] text-ink-400 truncate">{next.blurb}</span></span>
-            <span className="w-11 h-11 rounded-xl bg-lime-400 text-ink-950 flex items-center justify-center flex-shrink-0 transition-transform group-hover:translate-x-0.5"><Icon.ArrowRight width={18} height={18} /></span>
-          </Link>
-        ) : (
-          <Link href="/admission" className="group rounded-2xl bg-lime-400 text-ink-950 hover:bg-lime-300 p-5 sm:p-6 flex items-center justify-end gap-4 text-right transition">
-            <span><span className="block text-[12px] font-semibold uppercase tracking-[0.12em] opacity-70">Ready?</span><span className="block font-display text-lg font-semibold">Start the admission form</span><span className="block text-[13px] opacity-70">About five minutes</span></span>
-            <span className="w-11 h-11 rounded-xl bg-ink-950 text-lime-400 flex items-center justify-center flex-shrink-0"><Icon.ArrowRight width={18} height={18} /></span>
-          </Link>
-        )}
+    // One slim strip: previous on the left, next (or the admission form) on the right.
+    <nav aria-label="Page navigation" className="pb-8">
+      <div className={wrap}>
+        <div className="flex items-center justify-between gap-3 rounded-2xl ring-1 ring-white/[0.08] bg-white/[0.02] p-2">
+          {prev ? (
+            <Link href={prev.href} className="group flex items-center gap-3 rounded-xl px-3 py-2 hover:bg-white/[0.05] transition min-w-0">
+              <Icon.ArrowLeft width={16} height={16} className="text-ink-400 flex-shrink-0 transition-transform group-hover:-translate-x-0.5" />
+              <span className="min-w-0"><span className="block text-[11px] font-semibold uppercase tracking-[0.12em] text-ink-500">Previous</span><span className="block text-[14.5px] font-semibold truncate">{prev.label}</span></span>
+            </Link>
+          ) : <span />}
+          {next ? (
+            <Link href={next.href} className="group flex items-center gap-3 rounded-xl px-3 py-2 hover:bg-lime-400/[0.08] transition text-right min-w-0">
+              <span className="min-w-0"><span className="block text-[11px] font-semibold uppercase tracking-[0.12em] text-lime-400">Next</span><span className="block text-[14.5px] font-semibold truncate">{next.label} <span className="hidden sm:inline font-normal text-ink-400">· {next.blurb}</span></span></span>
+              <span className="w-9 h-9 rounded-lg bg-lime-400 text-ink-950 flex items-center justify-center flex-shrink-0 transition-transform group-hover:translate-x-0.5"><Icon.ArrowRight width={16} height={16} /></span>
+            </Link>
+          ) : (
+            <Link href="/admission" className="group flex items-center gap-2 rounded-xl bg-lime-400 text-ink-950 hover:bg-lime-300 px-4 py-2.5 font-semibold text-[14px] transition">
+              Start the admission form <Icon.ArrowRight width={15} height={15} className="transition-transform group-hover:translate-x-0.5" />
+            </Link>
+          )}
+        </div>
       </div>
     </nav>
   );
@@ -175,7 +177,7 @@ function Pager() {
 
 function SiteFooter() {
   return (
-    <footer className="border-t border-white/[0.06] pt-16 pb-28 lg:pb-12">
+    <footer className="border-t border-white/[0.06] pt-10 pb-24 lg:pb-8">
       <div className={`${wrap} grid sm:grid-cols-2 md:grid-cols-[1.4fr_1fr_1fr] gap-10`}>
         <div className="max-w-sm">
           <Logo size={34} />
@@ -198,7 +200,7 @@ function SiteFooter() {
           </div>
         </div>
       </div>
-      <div className={`${wrap} mt-12`}><div className="pt-6 border-t border-white/[0.06] flex flex-wrap justify-between gap-3 text-[12.5px] text-ink-400">
+      <div className={`${wrap} mt-8`}><div className="pt-6 border-t border-white/[0.06] flex flex-wrap justify-between gap-3 text-[12.5px] text-ink-400">
         <span>© 2020–{new Date().getFullYear()} Online Skating School. All rights reserved.</span>
         <span className="inline-flex items-center gap-1.5"><Icon.Lock width={12} height={12} /> Secure portal · encrypted sign-in</span>
       </div></div>

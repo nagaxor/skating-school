@@ -210,7 +210,8 @@ to reset it, re-run `db:bootstrap-admin` with a new password).
   `divide-ink-100 dark:divide-white/[0.05]`. Destructive actions always go through `ConfirmDialog` with a specific message.
 - **Dark mode:** always pair light classes with `dark:` variants; translucent tints (`bg-red-500/[0.07]`) work in both themes.
 - **Motion:** `animate-rise` (hero), `animate-glide` (rink streak), `animate-scaleIn` (dialogs). Respect reduced motion (globals.css does).
-- **Widths:** public pages use ONE container, `wrap` from SiteShell.js (`max-w-[1560px]`, side padding px-5 → 2xl:px-16). Never
+- **Widths:** public pages use ONE container, `wrap` from SiteShell.js (`max-w-[1680px]`, side padding px-4 → 2xl:px-10).
+  The owner prefers COMPACT layouts: little empty space, tight sections (Section = py-12 sm:py-16), a small CTA band, and a one-line Prev/Next strip. Never
   hard-code `max-w-7xl` on a public section, or the edges stop lining up. Headings scale up at `2xl:`. The dashboard `<main>` is capped at
   1760px. Forms (admission, login) stay narrow on purpose for readability.
 - Utilities in globals.css: `.grain` (noise overlay), `.hairline-grid`, `.tabular`, `.text-balance`; global `:focus-visible` ring.
@@ -267,6 +268,9 @@ to reset it, re-run `db:bootstrap-admin` with a new password).
 
 ## Changelog
 <!-- Newest first. Format: YYYY-MM-DD — what changed — files touched -->
+- **2026-11-14** — Compact pass (owner: too much space). wrap 1560 → 1680px with smaller side padding. Section spacing py-16/24 → py-12/16.
+  CTA band roughly half the height (smaller title and buttons). The Prev/Next pager is now ONE slim strip (prev left, next right; on the last page a
+  lime "Start the admission form" button). Less footer padding. Files: SiteShell.js.
 - **2026-11-14** — Wide-screen fix (owner: too much empty space left/right). Shared `wrap` container (1560px) for nav, heroes, sections,
   pager and footer. This also fixes misaligned edges between the hero and the sections. 2xl type scale on the hero. Dashboard main 1400 → 1760px.
   Files: SiteShell.js, site/HomeContent.js, DashboardShell.js.

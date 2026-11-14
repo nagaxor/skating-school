@@ -10,6 +10,10 @@ import { Icon } from "@/components/Icons";
 import { Logo, RinkLines } from "@/components/Brand";
 import { CONTACT, NAV } from "@/lib/site-content";
 
+// ONE container for every public page, so all edges line up and wide
+// screens are used well (1560px cap; side padding grows with the screen).
+export const wrap = "w-full max-w-[1560px] mx-auto px-5 sm:px-8 lg:px-12 2xl:px-16";
+
 export const dark = {
   card: "rounded-3xl bg-white/[0.03] ring-1 ring-white/[0.08]",
   cardHover: "transition hover:bg-white/[0.05] hover:ring-white/[0.14]",
@@ -46,7 +50,7 @@ function SiteNav() {
 
   return (
     <nav className={`fixed top-0 inset-x-0 z-50 transition-all duration-300 ${scrolled || open ? "bg-ink-950/85 backdrop-blur-xl border-b border-white/[0.06]" : "bg-transparent"}`}>
-      <div className="max-w-7xl mx-auto px-5 sm:px-8 h-16 sm:h-[72px] flex items-center justify-between gap-4">
+      <div className={`${wrap} h-16 sm:h-[72px] flex items-center justify-between gap-4`}>
         <Link href="/" aria-label="Online Skating School home"><Logo size={34} /></Link>
         <div className="hidden lg:flex items-center gap-0.5 text-[13.5px] font-medium">
           {NAV.map((n) => {
@@ -91,9 +95,9 @@ export function PageHero({ eyebrow, title, text, children }) {
       <div className="absolute inset-0 grain" />
       <div className="absolute -top-40 left-1/2 -translate-x-1/2 w-[900px] h-[460px] bg-[radial-gradient(closest-side,rgba(47,107,224,0.28),transparent)]" />
       <div className="absolute bottom-0 inset-x-0 h-32 bg-gradient-to-b from-transparent to-ink-950" />
-      <div className="relative max-w-7xl mx-auto px-5 sm:px-8 pt-36 sm:pt-44 pb-16 sm:pb-20">
+      <div className={`relative ${wrap} pt-36 sm:pt-44 pb-16 sm:pb-20`}>
         <p className={`${dark.eyebrow} animate-rise`}>{eyebrow}</p>
-        <h1 className="animate-rise [animation-delay:80ms] font-display text-[2.5rem] leading-[1.05] sm:text-6xl font-semibold tracking-[-0.035em] mt-4 max-w-3xl text-balance">{title}</h1>
+        <h1 className="animate-rise [animation-delay:80ms] font-display text-[2.5rem] leading-[1.05] sm:text-6xl 2xl:text-7xl font-semibold tracking-[-0.035em] mt-4 max-w-4xl text-balance">{title}</h1>
         {text && <p className="animate-rise [animation-delay:160ms] mt-5 text-[17px] sm:text-lg text-ink-400 max-w-2xl leading-relaxed">{text}</p>}
         {children && <div className="animate-rise [animation-delay:240ms] mt-8">{children}</div>}
       </div>
@@ -102,7 +106,7 @@ export function PageHero({ eyebrow, title, text, children }) {
 }
 
 export function Section({ children, className = "" }) {
-  return <section className={`relative py-16 sm:py-24 px-5 sm:px-8 ${className}`}><div className="max-w-7xl mx-auto">{children}</div></section>;
+  return <section className={`relative py-16 sm:py-24 ${className}`}><div className={wrap}>{children}</div></section>;
 }
 
 export function SectionHead({ eyebrow, title, text, center = false }) {
@@ -145,8 +149,8 @@ function Pager() {
   const prev = NAV[i - 1];
   const next = NAV[i + 1];
   return (
-    <nav aria-label="Page navigation" className="px-5 sm:px-8 pb-16">
-      <div className="max-w-7xl mx-auto grid sm:grid-cols-2 gap-4">
+    <nav aria-label="Page navigation" className="pb-16">
+      <div className={`${wrap} grid sm:grid-cols-2 gap-4`}>
         {prev ? (
           <Link href={prev.href} className="group rounded-2xl ring-1 ring-white/[0.08] bg-white/[0.02] hover:bg-white/[0.05] hover:ring-white/[0.16] p-5 sm:p-6 flex items-center gap-4 transition">
             <span className="w-11 h-11 rounded-xl bg-white/[0.06] flex items-center justify-center flex-shrink-0 transition-transform group-hover:-translate-x-0.5"><Icon.ArrowLeft width={18} height={18} /></span>
@@ -171,8 +175,8 @@ function Pager() {
 
 function SiteFooter() {
   return (
-    <footer className="border-t border-white/[0.06] pt-16 pb-28 lg:pb-12 px-5 sm:px-8">
-      <div className="max-w-7xl mx-auto grid sm:grid-cols-2 md:grid-cols-[1.4fr_1fr_1fr] gap-10">
+    <footer className="border-t border-white/[0.06] pt-16 pb-28 lg:pb-12">
+      <div className={`${wrap} grid sm:grid-cols-2 md:grid-cols-[1.4fr_1fr_1fr] gap-10`}>
         <div className="max-w-sm">
           <Logo size={34} />
           <p className="text-[14px] text-ink-400 leading-relaxed mt-4">Professional roller skating coaching since 2020. Uttara · Bashundhara · Aftab Nagar · Gulshan, Dhaka.</p>
@@ -194,10 +198,10 @@ function SiteFooter() {
           </div>
         </div>
       </div>
-      <div className="max-w-7xl mx-auto mt-12 pt-6 border-t border-white/[0.06] flex flex-wrap justify-between gap-3 text-[12.5px] text-ink-400">
+      <div className={`${wrap} mt-12`}><div className="pt-6 border-t border-white/[0.06] flex flex-wrap justify-between gap-3 text-[12.5px] text-ink-400">
         <span>© 2020–{new Date().getFullYear()} Online Skating School. All rights reserved.</span>
         <span className="inline-flex items-center gap-1.5"><Icon.Lock width={12} height={12} /> Secure portal · encrypted sign-in</span>
-      </div>
+      </div></div>
     </footer>
   );
 }

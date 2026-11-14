@@ -210,6 +210,9 @@ to reset it, re-run `db:bootstrap-admin` with a new password).
   `divide-ink-100 dark:divide-white/[0.05]`. Destructive actions always go through `ConfirmDialog` with a specific message.
 - **Dark mode:** always pair light classes with `dark:` variants; translucent tints (`bg-red-500/[0.07]`) work in both themes.
 - **Motion:** `animate-rise` (hero), `animate-glide` (rink streak), `animate-scaleIn` (dialogs). Respect reduced motion (globals.css does).
+- **Widths:** public pages use ONE container, `wrap` from SiteShell.js (`max-w-[1560px]`, side padding px-5 → 2xl:px-16). Never
+  hard-code `max-w-7xl` on a public section, or the edges stop lining up. Headings scale up at `2xl:`. The dashboard `<main>` is capped at
+  1760px. Forms (admission, login) stay narrow on purpose for readability.
 - Utilities in globals.css: `.grain` (noise overlay), `.hairline-grid`, `.tabular`, `.text-balance`; global `:focus-visible` ring.
 - Screenshots: a headless Chrome DevTools-protocol script was used during the redesign (kept outside the repo). Use real browser checks for UI changes.
 
@@ -264,6 +267,9 @@ to reset it, re-run `db:bootstrap-admin` with a new password).
 
 ## Changelog
 <!-- Newest first. Format: YYYY-MM-DD — what changed — files touched -->
+- **2026-11-14** — Wide-screen fix (owner: too much empty space left/right). Shared `wrap` container (1560px) for nav, heroes, sections,
+  pager and footer. This also fixes misaligned edges between the hero and the sections. 2xl type scale on the hero. Dashboard main 1400 → 1760px.
+  Files: SiteShell.js, site/HomeContent.js, DashboardShell.js.
 - **2026-11-14** — Navigation/UX pass after self-critique. Menu: Home · Programs · Why us · Branches · How to join · FAQ (Home added).
   New `/how-to-join` page (3 steps, "have these details ready" checklist matching the admission form, fee summary). The home page drops
   the duplicate Explore cards and Steps. A Previous/Next pager on every public page (no dead ends). Brighter inactive nav and footer text.

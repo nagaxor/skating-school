@@ -180,7 +180,7 @@ export default function DashboardShell({ user, children }) {
             </Link>
           </div>
         </header>
-        <main className="px-4 sm:px-6 lg:px-8 py-5 sm:py-7 flex-1 animate-fadeIn w-full max-w-[1400px] mx-auto">{children}</main>
+        <main className="px-4 sm:px-6 lg:px-8 2xl:px-10 py-5 sm:py-7 flex-1 animate-fadeIn w-full max-w-[1760px] mx-auto">{children}</main>
       </div>
 
       {/* Mobile bottom tab bar */}

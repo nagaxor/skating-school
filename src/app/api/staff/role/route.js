@@ -1,5 +1,5 @@
 import { db } from "@/lib/db";
-import { getAuthContext, assertSameOrigin } from "@/lib/access";
+import { getAuthContext, assertSameOrigin, requirePermission } from "@/lib/access";
 import { json } from "@/lib/auth";
 import { roleChangeSchema } from "@/lib/validation";
 import { audit } from "@/lib/security";
@@ -9,7 +9,7 @@ import { audit } from "@/lib/security";
 export async function PATCH(request) {
   if (!assertSameOrigin(request)) return json({ error: "Invalid origin" }, 403);
   const ctx = await getAuthContext();
-  if (!ctx || ctx.user.role !== "admin") return json({ error: "Forbidden" }, 403);
+  { const denied = requirePermission(ctx, "staff.change_role"); if (denied) return denied; }
 
   const parsed = roleChangeSchema.safeParse(await request.json());
   if (!parsed.success) return json({ error: "Invalid request", details: parsed.error.flatten().fieldErrors }, 400);

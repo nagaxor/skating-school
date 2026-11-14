@@ -7,6 +7,7 @@ import { api } from "@/lib/api";
 import { downloadCsv } from "@/lib/csv";
 import { Icon } from "@/components/Icons";
 import { Badge, PageLoading, EmptyState, Toast, ModalShell, ConfirmDialog, PageHeader, SearchInput, Avatar, cx } from "@/components/ui";
+import { can } from "@/lib/rbac";
 
 const PROGRAM_TONE = { Beginner: "brand", Intermediate: "lime", Advanced: "slate" };
 const PASSWORD_HINT = "At least 8 characters, with a letter and a number";
@@ -103,7 +104,7 @@ export default function StudentsPage() {
   ]);
 
   if (loading) return <PageLoading statCards={0} />;
-  const canManage = ["admin", "instructor"].includes(user.role);
+  const canManage = can(user.role, "students.update");
 
   return (
     <div className="space-y-5">
@@ -124,7 +125,7 @@ export default function StudentsPage() {
           <select className={cx.input + " !w-auto"} value={program} onChange={(e) => setProgram(e.target.value)} aria-label="Program">
             <option value="all">All programs</option><option>Beginner</option><option>Intermediate</option><option>Advanced</option>
           </select>
-          {user.role === "admin" && (
+          {can(user.role, "students.move_branch") && (
             <select className={cx.input + " !w-auto"} value={club} onChange={(e) => setClub(e.target.value)} aria-label="Branch">
               <option value="all">All branches</option>
               {clubs.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
@@ -190,7 +191,7 @@ export default function StudentsPage() {
                           <div className="flex items-center justify-end gap-0.5">
                             <button onClick={() => setModal({ type: "edit", student: s })} className={cx.btnGhost} title="Edit"><Icon.Edit width={14} height={14} /> Edit</button>
                             <button onClick={() => askToggle(s)} className={cx.btnGhost} title={s.status === "active" ? "Deactivate" : "Reactivate"}><Icon.Power width={14} height={14} /></button>
-                            {user.role === "admin" && <button onClick={() => askDelete(s)} className={cx.btnDangerGhost} title="Delete permanently"><Icon.Trash width={14} height={14} /></button>}
+                            {can(user.role, "students.delete") && <button onClick={() => askDelete(s)} className={cx.btnDangerGhost} title="Delete permanently"><Icon.Trash width={14} height={14} /></button>}
                           </div>
                         )}
                       </td>
@@ -203,7 +204,7 @@ export default function StudentsPage() {
         )}
       </div>
 
-      {modal && <StudentModal mode={modal.type} student={modal.student} clubs={clubs} isAdmin={user.role === "admin"} onClose={() => setModal(null)} onSave={save} />}
+      {modal && <StudentModal mode={modal.type} student={modal.student} clubs={clubs} isAdmin={can(user.role, "students.move_branch")} onClose={() => setModal(null)} onSave={save} />}
       <ConfirmDialog open={!!confirm} title={confirm?.title} message={confirm?.message} confirmLabel={confirm?.label} tone={confirm?.tone} busy={busy} onConfirm={runConfirm} onCancel={() => setConfirm(null)} />
       <Toast message={toast?.message} tone={toast?.tone} onClose={() => setToast(null)} />
     </div>

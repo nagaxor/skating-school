@@ -143,5 +143,72 @@ try {
   console.log("cleanup guardian fixtures done");
 }
 
+// ── RBAC matrix: every role × every protected endpoint ───────────────────
+// Reads the real matrix from src/lib/rbac.js. Bodies are deliberately empty or
+// invalid, so an ALLOWED role gets past authorization and then fails
+// validation (400/404) without changing data; a DENIED role must get 403.
+console.log("\n— RBAC matrix —");
+{
+  const { readFileSync } = await import("node:fs");
+  const { fileURLToPath } = await import("node:url");
+  const rbacSrc = readFileSync(fileURLToPath(new URL("../src/lib/rbac.js", import.meta.url)), "utf8");
+  const { can, ROLES } = await import("data:text/javascript;base64," + Buffer.from(rbacSrc).toString("base64"));
+
+  const t = Date.now();
+  const made = { users: [], students: [], clubs: [] };
+  const club = await call("/api/clubs", { method: "POST", cookie: A, body: { name: `RBAC Test ${t}`, location: "Test" } });
+  made.clubs.push(club.data?.id);
+  const inst = await call("/api/instructors", { method: "POST", cookie: A, body: { name: "RBAC Instructor", email: `rbac-i-${t}@local.test`, password: "Rbac-pass-123", clubId: club.data?.id } });
+  made.users.push(inst.data?.userId);
+  const stu = await call("/api/students", { method: "POST", cookie: A, body: { name: "RBAC Student", email: `rbac-s-${t}@local.test`, password: "Rbac-pass-123", guardian: "Parent", clubId: club.data?.id } });
+  made.students.push(stu.data?.id);
+  const gua = await call("/api/guardians", { method: "POST", cookie: A, body: { name: "RBAC Guardian", email: `rbac-g-${t}@local.test`, password: "Rbac-pass-123", children: [{ studentId: stu.data?.id, relation: "Father" }] } });
+  made.users.push(gua.data?.userId);
+
+  const cookies = {
+    admin: A,
+    instructor: (await login(`rbac-i-${t}@local.test`, "Rbac-pass-123")).cookie,
+    student: (await login(`rbac-s-${t}@local.test`, "Rbac-pass-123")).cookie,
+    guardian: (await login(`rbac-g-${t}@local.test`, "Rbac-pass-123")).cookie,
+  };
+  check("RBAC fixtures: one signed-in user per role", Object.values(cookies).every(Boolean));
+
+  const ENDPOINTS = [
+    ["GET", "/api/students", "students.read"], ["POST", "/api/students", "students.create"],
+    ["PATCH", "/api/students", "students.update"], ["DELETE", "/api/students", "students.delete"],
+    ["GET", "/api/payments", "payments.read"], ["POST", "/api/payments", "payments.create"],
+    ["GET", "/api/receipts?id=none", "payments.read"],
+    ["GET", "/api/attendance", "attendance.read"], ["POST", "/api/attendance", "attendance.mark"],
+    ["GET", "/api/schedules", "schedules.read"], ["POST", "/api/schedules", "schedules.create"], ["DELETE", "/api/schedules", "schedules.delete"],
+    ["GET", "/api/notices", "notices.read"], ["POST", "/api/notices", "notices.create"], ["DELETE", "/api/notices", "notices.delete"],
+    ["POST", "/api/clubs", "branches.manage"], ["PATCH", "/api/clubs", "branches.manage"], ["DELETE", "/api/clubs", "branches.manage"],
+    ["GET", "/api/instructors", "staff.manage"], ["POST", "/api/instructors", "staff.manage"], ["PATCH", "/api/instructors", "staff.manage"], ["DELETE", "/api/instructors", "staff.manage"],
+    ["GET", "/api/staff", "staff.manage"], ["DELETE", "/api/staff", "staff.manage"], ["PATCH", "/api/staff/role", "staff.change_role"],
+    ["GET", "/api/audit", "audit.read"],
+    ["POST", "/api/users/password", "users.reset_password"], ["PATCH", "/api/users/status", "users.set_status"],
+    ["GET", "/api/guardians", "guardians.manage"], ["POST", "/api/guardians", "guardians.manage"], ["PATCH", "/api/guardians", "guardians.manage"], ["DELETE", "/api/guardians", "guardians.manage"],
+    ["GET", "/api/my-children", "portal.children"],
+    ["PUT", "/api/settings", "settings.update"],
+  ];
+
+  let cells = 0, wrong = [];
+  for (const [method, path, perm] of ENDPOINTS) {
+    for (const role of ROLES) {
+      const r = await call(path, { method, cookie: cookies[role], body: method === "GET" ? undefined : {} });
+      const allowed = can(role, perm);
+      const ok = allowed ? r.status !== 401 && r.status !== 403 : r.status === 403;
+      cells++;
+      if (!ok) wrong.push(`${role} ${method} ${path} → ${r.status} (expected ${allowed ? "allowed" : "403"})`);
+    }
+  }
+  check(`RBAC matrix: ${ENDPOINTS.length} endpoints × ${ROLES.length} roles = ${cells} cells match lib/rbac.js`, wrong.length === 0, wrong.slice(0, 6).join(" | "));
+
+  // cleanup
+  for (const s of made.students) if (s) await call(`/api/students?id=${s}`, { method: "DELETE", cookie: A });
+  for (const u of made.users) if (u) { await call(`/api/guardians?userId=${u}`, { method: "DELETE", cookie: A }); await call(`/api/staff?userId=${u}`, { method: "DELETE", cookie: A }); }
+  for (const c of made.clubs) if (c) await call(`/api/clubs?id=${c}`, { method: "DELETE", cookie: A });
+  console.log("cleanup RBAC fixtures done");
+}
+
 console.log(failures ? `\n${failures} check(s) FAILED` : "\nAll security checks passed");
 process.exit(failures ? 1 : 0);

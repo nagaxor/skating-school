@@ -1,9 +1,9 @@
 import { db } from "@/lib/db";
-import { getAuthContext, studentScope } from "@/lib/access";
+import { getAuthContext, studentScope, requirePermission } from "@/lib/access";
 import { json } from "@/lib/auth";
 
 export async function GET(request) {
-  const ctx=await getAuthContext(); if(!ctx) return json({error:'Unauthorized'},401);
+  const ctx=await getAuthContext(); { const denied = requirePermission(ctx, "payments.read"); if (denied) return denied; }
   const id=new URL(request.url).searchParams.get('id'); if(!id) return json({error:'Missing id'},400);
   try {
     const payment=await db.payment.findFirst({where:{id:String(id),student:studentScope(ctx)},include:{student:{include:{user:{select:{name:true,phone:true}},club:{select:{id:true,name:true}}}}}});

@@ -1,12 +1,12 @@
 import { db } from "@/lib/db";
-import { getAuthContext, assertSameOrigin } from "@/lib/access";
+import { getAuthContext, assertSameOrigin, requirePermission } from "@/lib/access";
 import { json } from "@/lib/auth";
 import { idSchema } from "@/lib/validation";
 import { audit } from "@/lib/security";
 
 export async function GET() {
   const ctx = await getAuthContext();
-  if (!ctx || ctx.user.role !== "admin") return json({ error: "Forbidden" }, 403);
+  { const denied = requirePermission(ctx, "staff.manage"); if (denied) return denied; }
 
   const users = await db.user.findMany({
     where: { role: { in: ["admin", "instructor"] } },
@@ -34,7 +34,7 @@ export async function GET() {
 export async function DELETE(request) {
   if (!assertSameOrigin(request)) return json({ error: "Invalid origin" }, 403);
   const ctx = await getAuthContext();
-  if (!ctx || ctx.user.role !== "admin") return json({ error: "Forbidden" }, 403);
+  { const denied = requirePermission(ctx, "staff.manage"); if (denied) return denied; }
 
   const userId = new URL(request.url).searchParams.get("userId");
   if (!idSchema.safeParse(userId).success) return json({ error: "Invalid id" }, 400);

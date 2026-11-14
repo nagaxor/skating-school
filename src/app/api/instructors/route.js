@@ -1,5 +1,5 @@
 import { db } from "@/lib/db";
-import { getAuthContext, assertSameOrigin } from "@/lib/access";
+import { getAuthContext, assertSameOrigin, requirePermission } from "@/lib/access";
 import { json } from "@/lib/auth";
 import { instructorCreateSchema, instructorUpdateSchema, idSchema } from "@/lib/validation";
 import { audit, initialsOf } from "@/lib/security";
@@ -7,15 +7,14 @@ import bcrypt from "bcryptjs";
 
 export async function GET() {
   const ctx = await getAuthContext();
-  if (!ctx) return json({ error: "Unauthorized" }, 401);
-  if (ctx.user.role !== "admin") return json({ error: "Forbidden" }, 403);
+  { const denied = requirePermission(ctx, "staff.manage"); if (denied) return denied; }
   const instructors = await db.instructor.findMany({ include: { user:{select:{id:true,name:true,email:true,phone:true,active:true}}, club:{select:{id:true,name:true}} }, orderBy:{user:{name:"asc"}} });
   return json(instructors.map(i=>({id:i.id,userId:i.userId,name:i.user.name,email:i.user.email,phone:i.user.phone,specialization:i.specialization,club:i.club?.name||"",clubId:i.clubId,status:i.user.active?"active":"inactive"})));
 }
 
 export async function POST(request) {
   if (!assertSameOrigin(request)) return json({ error: "Invalid origin" }, 403);
-  const ctx = await getAuthContext(); if (!ctx || ctx.user.role !== "admin") return json({ error:"Forbidden" },403);
+  const ctx = await getAuthContext(); { const denied = requirePermission(ctx, "staff.manage"); if (denied) return denied; }
   const parsed = instructorCreateSchema.safeParse(await request.json()); if (!parsed.success) return json({error:"Invalid instructor data",details:parsed.error.flatten().fieldErrors},400);
   const d=parsed.data;
   if (d.clubId && !(await db.club.findUnique({where:{id:d.clubId}}))) return json({error:"Club not found"},400);
@@ -30,7 +29,7 @@ export async function POST(request) {
 
 export async function PATCH(request) {
   if (!assertSameOrigin(request)) return json({ error: "Invalid origin" }, 403);
-  const ctx = await getAuthContext(); if (!ctx || ctx.user.role !== "admin") return json({ error: "Forbidden" }, 403);
+  const ctx = await getAuthContext(); { const denied = requirePermission(ctx, "staff.manage"); if (denied) return denied; }
   const parsed = instructorUpdateSchema.safeParse(await request.json());
   if (!parsed.success) return json({ error: "Invalid instructor data", details: parsed.error.flatten().fieldErrors }, 400);
   const { id, name, phone, specialization, clubId } = parsed.data;
@@ -68,7 +67,7 @@ export async function PATCH(request) {
 
 export async function DELETE(request) {
   if (!assertSameOrigin(request)) return json({error:'Invalid origin'},403);
-  const ctx=await getAuthContext(); if(!ctx || ctx.user.role!=='admin') return json({error:'Forbidden'},403);
+  const ctx=await getAuthContext(); { const denied = requirePermission(ctx, "staff.manage"); if (denied) return denied; }
   const id=new URL(request.url).searchParams.get('id');
   if(!idSchema.safeParse(id).success) return json({error:'Invalid id'},400);
   try {

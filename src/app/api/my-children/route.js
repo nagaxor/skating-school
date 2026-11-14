@@ -1,6 +1,6 @@
 import { db } from "@/lib/db";
 import { json } from "@/lib/auth";
-import { getAuthContext, studentScope } from "@/lib/access";
+import { getAuthContext, studentScope, requirePermission } from "@/lib/access";
 import { balanceHistory } from "@/lib/fees";
 
 const DAYS = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
@@ -13,8 +13,7 @@ const ymd = (d) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0
 // numbers (NID, birth registration) are deliberately not included here.
 export async function GET() {
   const ctx = await getAuthContext();
-  if (!ctx) return json({ error: "Unauthorized" }, 401);
-  if (ctx.user.role !== "guardian") return json({ error: "Forbidden" }, 403);
+  { const denied = requirePermission(ctx, "portal.children"); if (denied) return denied; }
 
   const now = dhakaDate();
   const today = ymd(now);

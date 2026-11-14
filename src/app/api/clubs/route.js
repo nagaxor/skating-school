@@ -1,8 +1,9 @@
 import { db } from "@/lib/db";
-import { getAuthContext, assertSameOrigin } from "@/lib/access";
+import { getAuthContext, assertSameOrigin, requirePermission } from "@/lib/access";
 import { json } from "@/lib/auth";
 import { clubCreateSchema, clubUpdateSchema, idSchema } from "@/lib/validation";
 import { audit } from "@/lib/security";
+import { can } from "@/lib/rbac";
 
 export async function GET(request) {
   const ctx = await getAuthContext();
@@ -19,7 +20,7 @@ export async function GET(request) {
   }
 
   const showAll = new URL(request.url).searchParams.get("all") === "1";
-  const includeInactive = showAll && ctx.user.role === "admin";
+  const includeInactive = showAll && can(ctx.user.role, "branches.manage");
 
   const clubs = await db.club.findMany({
     where: includeInactive ? {} : { status: "active" },
@@ -41,7 +42,7 @@ export async function GET(request) {
 export async function POST(request) {
   if (!assertSameOrigin(request)) return json({ error: "Invalid origin" }, 403);
   const ctx = await getAuthContext();
-  if (!ctx || ctx.user.role !== "admin") return json({ error: "Forbidden" }, 403);
+  { const denied = requirePermission(ctx, "branches.manage"); if (denied) return denied; }
 
   const parsed = clubCreateSchema.safeParse(await request.json());
   if (!parsed.success) return json({ error: "Invalid branch data", details: parsed.error.flatten().fieldErrors }, 400);
@@ -60,7 +61,7 @@ export async function POST(request) {
 export async function PATCH(request) {
   if (!assertSameOrigin(request)) return json({ error: "Invalid origin" }, 403);
   const ctx = await getAuthContext();
-  if (!ctx || ctx.user.role !== "admin") return json({ error: "Forbidden" }, 403);
+  { const denied = requirePermission(ctx, "branches.manage"); if (denied) return denied; }
 
   const parsed = clubUpdateSchema.safeParse(await request.json());
   if (!parsed.success) return json({ error: "Invalid branch data", details: parsed.error.flatten().fieldErrors }, 400);
@@ -91,7 +92,7 @@ export async function PATCH(request) {
 export async function DELETE(request) {
   if (!assertSameOrigin(request)) return json({ error: "Invalid origin" }, 403);
   const ctx = await getAuthContext();
-  if (!ctx || ctx.user.role !== "admin") return json({ error: "Forbidden" }, 403);
+  { const denied = requirePermission(ctx, "branches.manage"); if (denied) return denied; }
 
   const id = new URL(request.url).searchParams.get("id");
   if (!idSchema.safeParse(id).success) return json({ error: "Invalid id" }, 400);

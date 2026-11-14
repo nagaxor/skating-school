@@ -6,6 +6,7 @@ import { api } from "@/lib/api";
 import { Icon } from "@/components/Icons";
 import { Avatar, Badge, ConfirmDialog, EmptyState, ModalShell, PageHeader, PageLoading, SearchInput, StatCard, Toast, cx } from "@/components/ui";
 import { ResetPasswordModal, PASSWORD_HINT, strongPassword, generatePassword } from "@/components/AccountActions";
+import { can } from "@/lib/rbac";
 
 const RELATIONS = ["Father", "Mother", "Guardian"];
 
@@ -20,7 +21,7 @@ export default function GuardiansPage() {
   const [toast, setToast] = useState(null);
 
   const load = useCallback(() => api("/api/guardians").then(setGuardians).catch((e) => setToast({ message: e.message, tone: "red" })), []);
-  useEffect(() => { if (user.role === "admin") { load(); api("/api/students").then(setStudents).catch(() => {}); } }, [load, user.role]);
+  useEffect(() => { if (can(user.role, "guardians.manage")) { load(); api("/api/students").then(setStudents).catch(() => {}); } }, [load, user.role]);
   const notify = (message, tone = "emerald") => setToast({ message, tone });
 
   const filtered = useMemo(() => {
@@ -28,7 +29,7 @@ export default function GuardiansPage() {
     return (guardians || []).filter((g) => !q || g.name.toLowerCase().includes(q) || g.email.toLowerCase().includes(q) || (g.phone || "").includes(q) || g.children.some((c) => c.name.toLowerCase().includes(q)));
   }, [guardians, search]);
 
-  if (user.role !== "admin") return <div className={cx.card}><EmptyState icon={Icon.Lock} title="Administrators only" /></div>;
+  if (!can(user.role, "guardians.manage")) return <div className={cx.card}><EmptyState icon={Icon.Lock} title="Administrators only" /></div>;
   if (!guardians) return <PageLoading statCards={3} />;
 
   const linkedIds = new Set(guardians.flatMap((g) => g.children.map((c) => c.id)));

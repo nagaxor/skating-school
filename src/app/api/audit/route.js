@@ -1,12 +1,11 @@
 import { db } from "@/lib/db";
 import { json } from "@/lib/auth";
-import { getAuthContext } from "@/lib/access";
+import { getAuthContext, requirePermission } from "@/lib/access";
 
 // GET /api/audit?cursor=<id>&action=<prefix>: admin-only activity log, newest first.
 export async function GET(request) {
   const ctx = await getAuthContext();
-  if (!ctx) return json({ error: "Unauthorized" }, 401);
-  if (ctx.user.role !== "admin") return json({ error: "Forbidden" }, 403);
+  { const denied = requirePermission(ctx, "audit.read"); if (denied) return denied; }
 
   const sp = new URL(request.url).searchParams;
   const cursor = sp.get("cursor");

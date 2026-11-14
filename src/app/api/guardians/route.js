@@ -1,7 +1,7 @@
 import bcrypt from "bcryptjs";
 import { db } from "@/lib/db";
 import { json } from "@/lib/auth";
-import { getAuthContext, assertSameOrigin, isAdmin } from "@/lib/access";
+import { getAuthContext, assertSameOrigin, requirePermission } from "@/lib/access";
 import { guardianCreateSchema, guardianLinkSchema, idSchema } from "@/lib/validation";
 import { audit, initialsOf } from "@/lib/security";
 
@@ -11,8 +11,8 @@ import { audit, initialsOf } from "@/lib/security";
 async function requireAdmin(request, mutating) {
   if (mutating && !assertSameOrigin(request)) return { res: json({ error: "Invalid origin" }, 403) };
   const ctx = await getAuthContext();
-  if (!ctx) return { res: json({ error: "Unauthorized" }, 401) };
-  if (!isAdmin(ctx)) return { res: json({ error: "Forbidden" }, 403) };
+  const denied = requirePermission(ctx, "guardians.manage");
+  if (denied) return { res: denied };
   return { ctx };
 }
 

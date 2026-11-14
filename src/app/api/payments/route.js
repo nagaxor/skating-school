@@ -1,13 +1,13 @@
 import crypto from "node:crypto";
 import { db } from "@/lib/db";
-import { getAuthContext, assertSameOrigin, isStaff, studentScope } from "@/lib/access";
+import { getAuthContext, assertSameOrigin, studentScope, requirePermission } from "@/lib/access";
 import { json } from "@/lib/auth";
 import { paymentCreateSchema } from "@/lib/validation";
 import { audit } from "@/lib/security";
 
 
 export async function GET(request) {
-  const ctx=await getAuthContext(); if(!ctx) return json({error:'Unauthorized'},401);
+  const ctx=await getAuthContext(); { const denied = requirePermission(ctx, "payments.read"); if (denied) return denied; }
   const studentId=new URL(request.url).searchParams.get('studentId');
   // Scope first; a studentId filter can only narrow it, never widen it.
   const where={student:studentScope(ctx)};
@@ -18,7 +18,7 @@ export async function GET(request) {
 
 export async function POST(request) {
   if(!assertSameOrigin(request)) return json({error:'Invalid origin'},403);
-  const ctx=await getAuthContext(); if(!ctx || !isStaff(ctx)) return json({error:'Forbidden'},403);
+  const ctx=await getAuthContext(); { const denied = requirePermission(ctx, "payments.create"); if (denied) return denied; }
   const parsed=paymentCreateSchema.safeParse(await request.json()); if(!parsed.success) return json({error:'Invalid payment data',details:parsed.error.flatten().fieldErrors},400);
   const d=parsed.data;
   const student=await db.student.findUnique({where:{id:d.studentId},include:{user:{select:{name:true}},club:true}});

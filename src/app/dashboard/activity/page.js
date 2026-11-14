@@ -5,6 +5,7 @@ import { useAuth } from "@/lib/auth-context";
 import { api } from "@/lib/api";
 import { Icon } from "@/components/Icons";
 import { PageHeader, EmptyState, PageLoading, Badge, Avatar, cx } from "@/components/ui";
+import { can } from "@/lib/rbac";
 
 const FILTERS = [
   { key: "", label: "All" },
@@ -83,12 +84,12 @@ export default function ActivityPage() {
   }, [filter]);
 
   useEffect(() => {
-    if (user.role !== "admin") return;
+    if (!can(user.role, "audit.read")) return;
     setItems(null);
     load(true).catch((e) => setError(e.message));
   }, [load, user.role]);
 
-  if (user.role !== "admin") return <div className={cx.card}><EmptyState icon={Icon.Lock} title="Administrators only" /></div>;
+  if (!can(user.role, "audit.read")) return <div className={cx.card}><EmptyState icon={Icon.Lock} title="Administrators only" /></div>;
 
   // Group by day
   const groups = [];

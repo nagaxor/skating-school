@@ -1,13 +1,14 @@
 import { db } from "@/lib/db";
-import { getAuthContext, assertSameOrigin, isStaff, isAdmin, studentScope } from "@/lib/access";
+import { getAuthContext, assertSameOrigin, studentScope, requirePermission } from "@/lib/access";
 import { json } from "@/lib/auth";
 import { studentCreateSchema, studentUpdateSchema, idSchema } from "@/lib/validation";
 import { audit, initialsOf } from "@/lib/security";
+import { can } from "@/lib/rbac";
 import bcrypt from "bcryptjs";
 
 export async function GET(request) {
   const ctx = await getAuthContext();
-  if (!ctx) return json({ error: "Unauthorized" }, 401);
+  { const denied = requirePermission(ctx, "students.read"); if (denied) return denied; }
   const { searchParams } = new URL(request.url);
   const id = searchParams.get("id");
 
@@ -22,7 +23,8 @@ export async function GET(request) {
     });
     if (!s) return json({ error: "Not found" }, 404);
     // NIDs / birth registration: admins, the student themself, and their linked guardians.
-    const sensitive = isAdmin(ctx) || s.userId === ctx.user.id || ctx.user.role === "guardian";
+    // Identity numbers: role must hold students.view_ids; scope already limits which records.
+    const sensitive = can(ctx.user.role, "students.view_ids");
     return json({
       id: s.id, userId: s.userId, name: s.user.name, email: s.user.email, phone: s.user.phone, avatar: s.user.avatar,
       age: s.age, guardian: s.guardian, program: s.program, club: s.club?.name || "", clubId: s.clubId,
@@ -39,7 +41,7 @@ export async function GET(request) {
   const requestedClub = searchParams.get("club");
   const search = searchParams.get("search")?.trim().toLowerCase();
   const where = { ...studentScope(ctx) };
-  if (requestedClub && isAdmin(ctx)) where.clubId = requestedClub;
+  if (requestedClub && can(ctx.user.role, "students.move_branch")) where.clubId = requestedClub;
   const students = await db.student.findMany({
     where, include: { user: { select: { id: true, name: true, email: true, phone: true, avatar: true, active: true } }, club: { select: { id: true, name: true } } },
     orderBy: { enrollDate: "desc" },
@@ -51,7 +53,7 @@ export async function GET(request) {
 export async function POST(request) {
   if (!assertSameOrigin(request)) return json({ error: "Invalid origin" }, 403);
   const ctx = await getAuthContext();
-  if (!ctx || !isStaff(ctx)) return json({ error: "Forbidden" }, 403);
+  { const denied = requirePermission(ctx, "students.create"); if (denied) return denied; }
   const parsed = studentCreateSchema.safeParse(await request.json());
   if (!parsed.success) return json({ error: "Invalid student data", details: parsed.error.flatten().fieldErrors }, 400);
   const data = parsed.data;
@@ -76,7 +78,7 @@ export async function POST(request) {
 export async function DELETE(request) {
   if (!assertSameOrigin(request)) return json({ error: "Invalid origin" }, 403);
   const ctx = await getAuthContext();
-  if (!ctx || ctx.user.role !== "admin") return json({ error: "Forbidden" }, 403);
+  { const denied = requirePermission(ctx, "students.delete"); if (denied) return denied; }
   const id = new URL(request.url).searchParams.get("id");
   if (!idSchema.safeParse(id).success) return json({ error: "Invalid id" }, 400);
   const student = await db.student.findUnique({ where: { id } });
@@ -92,7 +94,7 @@ export async function DELETE(request) {
 export async function PATCH(request) {
   if (!assertSameOrigin(request)) return json({ error: "Invalid origin" }, 403);
   const ctx = await getAuthContext();
-  if (!ctx || !isStaff(ctx)) return json({ error: "Forbidden" }, 403);
+  { const denied = requirePermission(ctx, "students.update"); if (denied) return denied; }
   const parsed = studentUpdateSchema.safeParse(await request.json());
   if (!parsed.success) return json({ error: "Invalid student data", details: parsed.error.flatten().fieldErrors }, 400);
   const { id, name, phone, age, guardian, program, clubId } = parsed.data;
@@ -101,7 +103,7 @@ export async function PATCH(request) {
   if (!student) return json({ error: "Not found" }, 404);
   if (ctx.user.role === "instructor") {
     if (student.clubId !== ctx.user.instructor?.clubId) return json({ error: "Forbidden" }, 403);
-    if (clubId !== undefined && clubId !== student.clubId) return json({ error: "Only an administrator can move a student to another branch" }, 403);
+    if (clubId !== undefined && clubId !== student.clubId && !can(ctx.user.role, "students.move_branch")) return json({ error: "Only an administrator can move a student to another branch" }, 403);
   }
   if (clubId && !(await db.club.findUnique({ where: { id: clubId } }))) return json({ error: "Club not found" }, 400);
 
@@ -122,7 +124,7 @@ export async function PATCH(request) {
           ...(age !== undefined ? { age } : {}),
           ...(guardian !== undefined ? { guardian } : {}),
           ...(program !== undefined ? { program } : {}),
-          ...(clubId !== undefined && ctx.user.role === "admin" ? { clubId } : {}),
+          ...(clubId !== undefined && can(ctx.user.role, "students.move_branch") ? { clubId } : {}),
         },
       });
     });

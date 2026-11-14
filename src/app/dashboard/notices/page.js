@@ -5,6 +5,7 @@ import { useAuth } from "@/lib/auth-context";
 import { api } from "@/lib/api";
 import { Icon } from "@/components/Icons";
 import { Badge, PageLoading, EmptyState, Toast, ModalShell, ConfirmDialog, PageHeader, Avatar, cx } from "@/components/ui";
+import { can } from "@/lib/rbac";
 
 export default function NoticesPage() {
   const { user } = useAuth();
@@ -17,11 +18,12 @@ export default function NoticesPage() {
   const [busy, setBusy] = useState(false);
   const [onlyUrgent, setOnlyUrgent] = useState(false);
 
-  const canPost = ["admin", "instructor"].includes(user.role);
-  const canDelete = (n) => user.role === "admin" || (user.role === "instructor" && n.mine);
+  const canPost = can(user.role, "notices.create");
+  // Permission from RBAC; scope rule: instructors may only delete their own (enforced by the API too).
+  const canDelete = (n) => can(user.role, "notices.delete") && (n.mine || can(user.role, "branches.manage"));
 
   const load = useCallback(() => api("/api/notices").then(setNotices).finally(() => setLoading(false)), []);
-  useEffect(() => { load(); if (user.role === "admin") api("/api/clubs").then(setClubs).catch(() => {}); }, [load, user.role]);
+  useEffect(() => { load(); if (can(user.role, "branches.manage")) api("/api/clubs").then(setClubs).catch(() => {}); }, [load, user.role]);
 
   const handleAdd = async (form) => {
     await api("/api/notices", { method: "POST", body: JSON.stringify(form) });

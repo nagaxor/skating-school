@@ -9,6 +9,7 @@ import { Icon } from "@/components/Icons";
 import { Badge, PageLoading, EmptyState, Avatar, ConfirmDialog, Toast, cx } from "@/components/ui";
 import { ResetPasswordModal } from "@/components/AccountActions";
 import AttendanceGrid from "@/components/AttendanceGrid";
+import { can } from "@/lib/rbac";
 
 const PROGRAM_TONE = { Beginner: "brand", Intermediate: "lime", Advanced: "slate" };
 const fmtDate = (d) => (d ? new Date(d).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" }) : "—");
@@ -43,7 +44,7 @@ export default function StudentDetailPage() {
   const totalPaid = payments.reduce((s, p) => s + p.amount, 0);
   const lastPayment = payments[0];
   const isActive = student.status === "active";
-  const canManage = ["admin", "instructor"].includes(user.role);
+  const canManage = can(user.role, "students.update");
 
   const toggleStatus = async () => {
     setBusy(true);
@@ -86,9 +87,9 @@ export default function StudentDetailPage() {
               </div>
             </div>
           </div>
-          {user.role === "admin" || user.role === "instructor" ? (
+          {can(user.role, "users.set_status") ? (
             <div className="flex gap-2 flex-wrap">
-              {user.role === "admin" && <button onClick={() => setResetOpen(true)} className="inline-flex items-center gap-2 text-sm font-semibold px-4 py-2.5 rounded-xl bg-white/[0.07] ring-1 ring-white/10 hover:bg-white/[0.12] transition"><Icon.Key width={15} height={15} /> Reset password</button>}
+              {can(user.role, "users.reset_password") && <button onClick={() => setResetOpen(true)} className="inline-flex items-center gap-2 text-sm font-semibold px-4 py-2.5 rounded-xl bg-white/[0.07] ring-1 ring-white/10 hover:bg-white/[0.12] transition"><Icon.Key width={15} height={15} /> Reset password</button>}
               <button onClick={() => setConfirm(true)} className="inline-flex items-center gap-2 text-sm font-semibold px-4 py-2.5 rounded-xl bg-white/[0.07] ring-1 ring-white/10 hover:bg-white/[0.12] transition"><Icon.Power width={15} height={15} /> {isActive ? "Deactivate" : "Reactivate"}</button>
             </div>
           ) : null}

@@ -7,6 +7,7 @@ import { Icon } from "@/components/Icons";
 import { Badge, PageLoading, EmptyState, PageHeader, cx } from "@/components/ui";
 import { downloadCsv } from "@/lib/csv";
 import Link from "next/link";
+import { can } from "@/lib/rbac";
 
 const monthLabel = (y, m) => new Date(y, m, 1).toLocaleDateString("en-US", { month: "long", year: "numeric" });
 
@@ -35,7 +36,7 @@ export default function PaymentHistoryPage() {
     Promise.all([api("/api/students"), api("/api/payments")])
       .then(([s, p]) => { setStudents(s); setPayments(p); })
       .finally(() => setLoading(false));
-    if (user.role === "admin") api("/api/clubs?all=1").then(setClubs).catch(() => {});
+    if (can(user.role, "branches.manage")) api("/api/clubs?all=1").then(setClubs).catch(() => {});
   }, [user.role]);
 
   // Union of the last 12 months and any month label that actually appears in
@@ -97,7 +98,7 @@ export default function PaymentHistoryPage() {
           <Icon.Search width={15} height={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500" />
           <input className={cx.input + " pl-9"} placeholder="Search by name or guardian…" value={search} onChange={(e) => setSearch(e.target.value)} />
         </div>
-        {user.role === "admin" && (
+        {can(user.role, "branches.manage") && (
           <select className={cx.input + " w-44"} value={clubFilter} onChange={(e) => setClubFilter(e.target.value)}>
             <option value="">All branches</option>
             {clubs.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}

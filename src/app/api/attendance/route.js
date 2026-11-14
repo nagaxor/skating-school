@@ -1,12 +1,12 @@
 import { db } from "@/lib/db";
-import { getAuthContext, assertSameOrigin, isStaff, studentScope } from "@/lib/access";
+import { getAuthContext, assertSameOrigin, studentScope, requirePermission } from "@/lib/access";
 import { json } from "@/lib/auth";
 import { attendanceCreateSchema } from "@/lib/validation";
 
 function dayUtc(value){ const [y,m,d]=value.split('-').map(Number); return new Date(Date.UTC(y,m-1,d)); }
 
 export async function GET(request){
-  const ctx=await getAuthContext(); if(!ctx) return json({error:'Unauthorized'},401);
+  const ctx=await getAuthContext(); { const denied = requirePermission(ctx, "attendance.read"); if (denied) return denied; }
   const sp=new URL(request.url).searchParams; const studentId=sp.get('studentId'); const date=sp.get('date'); const month=sp.get('month');
   const where={student:studentScope(ctx)};
   if(studentId) where.studentId=String(studentId);
@@ -18,7 +18,7 @@ export async function GET(request){
 
 export async function POST(request){
   if(!assertSameOrigin(request)) return json({error:'Invalid origin'},403);
-  const ctx=await getAuthContext(); if(!ctx || !isStaff(ctx)) return json({error:'Forbidden'},403);
+  const ctx=await getAuthContext(); { const denied = requirePermission(ctx, "attendance.mark"); if (denied) return denied; }
   const parsed=attendanceCreateSchema.safeParse(await request.json()); if(!parsed.success) return json({error:'Invalid attendance data'},400);
   const d=parsed.data; const ids=[...new Set(d.records.map(r=>r.studentId))];
   const students=await db.student.findMany({where:{id:{in:ids}},select:{id:true,clubId:true}});

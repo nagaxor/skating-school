@@ -7,6 +7,7 @@ import { Icon } from "@/components/Icons";
 import { PageLoading, EmptyState, Toast, ModalShell, PageHeader, cx } from "@/components/ui";
 import { downloadCsv } from "@/lib/csv";
 import Link from "next/link";
+import { can } from "@/lib/rbac";
 
 const METHOD_LABEL = { cash: "Cash", bkash: "bKash", nagad: "Nagad", rocket: "Rocket", bank_transfer: "Bank Transfer" };
 const TYPE_LABEL = { monthly_fee: "Monthly Fee", admission_fee: "Admission Fee", equipment: "Equipment", event_fee: "Event Fee" };
@@ -22,7 +23,7 @@ export default function FeesPage() {
   const load = () => Promise.all([api("/api/payments"), api("/api/students")]).then(([p, s]) => { setPayments(p); setStudents(s); }).finally(() => setLoading(false));
   useEffect(() => { load(); }, []);
 
-  const canRecord = ["admin", "instructor"].includes(user.role);
+  const canRecord = can(user.role, "payments.create");
 
   const handleAdd = async (form) => {
     const res = await api("/api/payments", { method: "POST", body: JSON.stringify(form) });

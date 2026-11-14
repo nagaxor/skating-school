@@ -1,7 +1,7 @@
 import bcrypt from "bcryptjs";
 import { db } from "@/lib/db";
 import { json } from "@/lib/auth";
-import { getAuthContext, assertSameOrigin } from "@/lib/access";
+import { getAuthContext, assertSameOrigin, requirePermission } from "@/lib/access";
 import { adminPasswordResetSchema, PASSWORD_HINT } from "@/lib/validation";
 import { audit } from "@/lib/security";
 
@@ -10,7 +10,7 @@ import { audit } from "@/lib/security";
 export async function POST(request) {
   if (!assertSameOrigin(request)) return json({ error: "Invalid origin" }, 403);
   const ctx = await getAuthContext();
-  if (!ctx || ctx.user.role !== "admin") return json({ error: "Forbidden" }, 403);
+  { const denied = requirePermission(ctx, "users.reset_password"); if (denied) return denied; }
 
   const parsed = adminPasswordResetSchema.safeParse(await request.json());
   if (!parsed.success) return json({ error: `Password: ${PASSWORD_HINT.toLowerCase()}` }, 400);

@@ -1,11 +1,11 @@
 import { db } from "@/lib/db";
-import { getAuthContext, assertSameOrigin, isStaff, visibleClubIds } from "@/lib/access";
+import { getAuthContext, assertSameOrigin, visibleClubIds, requirePermission } from "@/lib/access";
 import { json } from "@/lib/auth";
 import { noticeCreateSchema, idSchema } from "@/lib/validation";
 import { audit } from "@/lib/security";
 
 export async function GET(){
-  const ctx=await getAuthContext(); if(!ctx) return json({error:'Unauthorized'},401);
+  const ctx=await getAuthContext(); { const denied = requirePermission(ctx, "notices.read"); if (denied) return denied; }
   // Everyone sees "All"; branch notices only for branches in the caller's scope.
   const clubIds=await visibleClubIds(ctx);
   const names= clubIds===null ? null : (await db.club.findMany({where:{id:{in:clubIds}},select:{name:true}})).map(c=>c.name);
@@ -16,7 +16,7 @@ export async function GET(){
 
 export async function POST(request){
   if(!assertSameOrigin(request)) return json({error:'Invalid origin'},403);
-  const ctx=await getAuthContext(); if(!ctx || !isStaff(ctx)) return json({error:'Forbidden'},403);
+  const ctx=await getAuthContext(); { const denied = requirePermission(ctx, "notices.create"); if (denied) return denied; }
   const parsed=noticeCreateSchema.safeParse(await request.json()); if(!parsed.success) return json({error:'Invalid notice',details:parsed.error.flatten().fieldErrors},400);
   let audience=parsed.data.audience;
   if(ctx.user.role==='instructor'){
@@ -33,7 +33,7 @@ export async function POST(request){
 // Admins can delete any notice; instructors only notices they posted.
 export async function DELETE(request){
   if(!assertSameOrigin(request)) return json({error:'Invalid origin'},403);
-  const ctx=await getAuthContext(); if(!ctx || !isStaff(ctx)) return json({error:'Forbidden'},403);
+  const ctx=await getAuthContext(); { const denied = requirePermission(ctx, "notices.delete"); if (denied) return denied; }
   const id=new URL(request.url).searchParams.get('id');
   if(!idSchema.safeParse(id).success) return json({error:'Invalid id'},400);
   const notice=await db.notice.findUnique({where:{id}});

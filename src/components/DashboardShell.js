@@ -9,27 +9,29 @@ import { Icon } from "@/components/Icons";
 import { Logo, LogoMark } from "@/components/Brand";
 import { Avatar } from "@/components/ui";
 import CommandPalette from "@/components/CommandPalette";
+import { can, canAccessPath, ROLE_LABELS } from "@/lib/rbac";
 
 const MENU = [
-  { href: "/dashboard", label: "Overview", icon: Icon.Home, roles: ["admin", "instructor", "student"], exact: true },
-  { href: "/dashboard", label: "My Children", icon: Icon.Users, roles: ["guardian"], exact: true },
+  { href: "/dashboard", label: "Overview", icon: Icon.Home, perm: "self.profile", hideIf: "portal.children", exact: true },
+  { href: "/dashboard", label: "My Children", icon: Icon.Users, perm: "portal.children", exact: true },
   { section: "People" },
-  { href: "/dashboard/students", label: "Students", icon: Icon.Users, roles: ["admin", "instructor"] },
-  { href: "/dashboard/guardians", label: "Guardians", icon: Icon.HeartPulse, roles: ["admin"] },
-  { href: "/dashboard/staff", label: "Staff", icon: Icon.Shield, roles: ["admin"] },
-  { href: "/dashboard/branches", label: "Branches", icon: Icon.Building, roles: ["admin"] },
+  { href: "/dashboard/students", label: "Students", icon: Icon.Users, perm: "students.create" },
+  { href: "/dashboard/guardians", label: "Guardians", icon: Icon.HeartPulse, perm: "guardians.manage" },
+  { href: "/dashboard/staff", label: "Staff", icon: Icon.Shield, perm: "staff.manage" },
+  { href: "/dashboard/branches", label: "Branches", icon: Icon.Building, perm: "branches.manage" },
   { section: "Operations" },
-  { href: "/dashboard/attendance", label: "Attendance", icon: Icon.Clipboard, roles: ["admin", "instructor"] },
-  { href: "/dashboard/fees", label: "Fees & Payments", icon: Icon.Wallet, roles: ["admin", "instructor", "student", "guardian"] },
-  { href: "/dashboard/payment-history", label: "Fee Tracker", icon: Icon.TrendingUp, roles: ["admin", "instructor"] },
-  { href: "/dashboard/schedule", label: "Schedule", icon: Icon.Calendar, roles: ["admin", "instructor", "student", "guardian"] },
-  { href: "/dashboard/notices", label: "Notices", icon: Icon.Bell, roles: ["admin", "instructor", "student", "guardian"] },
+  { href: "/dashboard/attendance", label: "Attendance", icon: Icon.Clipboard, perm: "attendance.mark" },
+  { href: "/dashboard/fees", label: "Fees & Payments", icon: Icon.Wallet, perm: "payments.read" },
+  { href: "/dashboard/payment-history", label: "Fee Tracker", icon: Icon.TrendingUp, perm: "fees.track" },
+  { href: "/dashboard/schedule", label: "Schedule", icon: Icon.Calendar, perm: "schedules.read" },
+  { href: "/dashboard/notices", label: "Notices", icon: Icon.Bell, perm: "notices.read" },
   { section: "Administration" },
-  { href: "/dashboard/reports", label: "Reports", icon: Icon.BarChart, roles: ["admin"] },
-  { href: "/dashboard/activity", label: "Activity Log", icon: Icon.Activity, roles: ["admin"] },
-  { href: "/dashboard/settings", label: "Settings", icon: Icon.Settings, roles: ["admin"] },
+  { href: "/dashboard/reports", label: "Reports", icon: Icon.BarChart, perm: "reports.view" },
+  { href: "/dashboard/activity", label: "Activity Log", icon: Icon.Activity, perm: "audit.read" },
+  { href: "/dashboard/roles", label: "Roles & Access", icon: Icon.Key, perm: "rbac.view" },
+  { href: "/dashboard/settings", label: "Settings", icon: Icon.Settings, perm: "settings.update" },
   { section: "Account" },
-  { href: "/dashboard/profile", label: "Profile & Security", icon: Icon.User, roles: ["admin", "instructor", "student", "guardian"] },
+  { href: "/dashboard/profile", label: "Profile & Security", icon: Icon.User, perm: "self.profile" },
 ];
 
 // Same four destinations for every role so the phone tab bar never reshuffles.
@@ -40,6 +42,9 @@ const TABS = [
   { href: "/dashboard/notices", label: "Notices", icon: Icon.Bell },
 ];
 
+// Menu visibility comes from the RBAC matrix (lib/rbac.js), never from role lists.
+const visible = (item, role) => !!item.perm && can(role, item.perm) && !(item.hideIf && can(role, item.hideIf));
+
 function isActive(pathname, item) {
   if (item.exact) return pathname === item.href;
   return pathname === item.href || pathname.startsWith(item.href + "/");
@@ -49,7 +54,7 @@ function MenuList({ pathname, role, onNavigate, variant }) {
   return MENU.map((item, i) => {
     if (item.section) {
       let any = false;
-      for (let j = i + 1; j < MENU.length && !MENU[j].section; j++) if (MENU[j].roles?.includes(role)) any = true;
+      for (let j = i + 1; j < MENU.length && !MENU[j].section; j++) if (visible(MENU[j], role)) any = true;
       if (!any) return null;
       return (
         <div key={item.section} className={`mt-6 mb-2 px-3 text-[10.5px] font-semibold uppercase tracking-[0.14em] ${variant === "sheet" ? "text-ink-400" : "text-ink-500"}`}>
@@ -57,7 +62,7 @@ function MenuList({ pathname, role, onNavigate, variant }) {
         </div>
       );
     }
-    if (!item.roles?.includes(role)) return null;
+    if (!visible(item, role)) return null;
     const active = isActive(pathname, item);
 
     if (variant === "sheet") {
@@ -87,11 +92,15 @@ export default function DashboardShell({ user, children }) {
   const { logout } = useAuth();
   const { theme, toggleTheme } = useTheme();
 
-  const activeItem = pathname.startsWith("/dashboard/receipt/")
+  const activeItem = !canAccessPath(user.role, pathname)
+    ? { label: "No access" }
+    : pathname.startsWith("/dashboard/receipt/")
     ? { label: "Receipt" }
     : pathname.startsWith("/dashboard/children/")
     ? { label: "My Children" }
-    : [...MENU].reverse().find((m) => m.href && m.roles.includes(user.role) && isActive(pathname, m));
+    : pathname.startsWith("/dashboard/students/")
+    ? { label: "Student" }
+    : [...MENU].reverse().find((m) => m.href && visible(m, user.role) && isActive(pathname, m));
   const onATab = TABS.some((t) => isActive(pathname, t));
 
   useEffect(() => {
@@ -107,10 +116,10 @@ export default function DashboardShell({ user, children }) {
     const nav = [];
     for (const m of MENU) {
       if (m.section) { group = m.section === "Account" ? "Account" : "Navigate"; continue; }
-      if (m.roles.includes(user.role)) nav.push({ label: m.label, href: m.href, icon: m.icon, group });
+      if (visible(m, user.role)) nav.push({ label: m.label, href: m.href, icon: m.icon, group });
     }
     const actions = [];
-    if (["admin", "instructor"].includes(user.role)) {
+    if (can(user.role, "payments.create")) {
       actions.push({ label: "Record a payment", href: "/dashboard/fees", icon: Icon.Wallet, group: "Quick actions", keywords: "fee receipt collect" });
       actions.push({ label: "Mark today's attendance", href: "/dashboard/attendance", icon: Icon.Clipboard, group: "Quick actions", keywords: "present absent" });
       actions.push({ label: "Post a notice", href: "/dashboard/notices", icon: Icon.Bell, group: "Quick actions", keywords: "announcement" });
@@ -180,7 +189,7 @@ export default function DashboardShell({ user, children }) {
             </Link>
           </div>
         </header>
-        <main className="px-4 sm:px-6 lg:px-8 2xl:px-10 py-5 sm:py-7 flex-1 animate-fadeIn w-full max-w-[1760px] mx-auto">{children}</main>
+        <main className="px-4 sm:px-6 lg:px-8 2xl:px-10 py-5 sm:py-7 flex-1 animate-fadeIn w-full max-w-[1760px] mx-auto">{canAccessPath(user.role, pathname) ? children : <NoAccess />}</main>
       </div>
 
       {/* Mobile bottom tab bar */}
@@ -232,5 +241,17 @@ export default function DashboardShell({ user, children }) {
 }
 
 function roleLabel(role) {
-  return { admin: "Administrator", instructor: "Instructor", student: "Student", guardian: "Guardian" }[role] || "Member";
+  return ROLE_LABELS[role] || "Member";
+}
+
+// Shown instead of a page the current role isn't allowed to open.
+function NoAccess() {
+  return (
+    <div className="max-w-lg mx-auto mt-10 text-center rounded-3xl bg-white dark:bg-ink-900/70 shadow-card dark:ring-1 dark:ring-white/[0.07] p-10">
+      <div className="w-14 h-14 mx-auto rounded-2xl bg-red-500/10 text-red-600 dark:text-red-400 flex items-center justify-center"><Icon.Lock width={24} height={24} /></div>
+      <h2 className="font-display text-xl font-semibold text-ink-950 dark:text-white mt-5">You don&apos;t have access to this page</h2>
+      <p className="text-sm text-ink-500 dark:text-ink-400 mt-2">Your role doesn&apos;t include this area. If you think this is a mistake, ask an administrator.</p>
+      <Link href="/dashboard" className="mt-6 inline-flex items-center gap-2 bg-ink-950 text-white dark:bg-white dark:text-ink-950 font-semibold text-sm px-4 py-2.5 rounded-xl">Back to dashboard</Link>
+    </div>
+  );
 }

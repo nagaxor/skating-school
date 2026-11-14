@@ -5,6 +5,7 @@ import { useAuth } from "@/lib/auth-context";
 import { api } from "@/lib/api";
 import { Icon } from "@/components/Icons";
 import { Badge, PageLoading, EmptyState, Toast, ModalShell, ConfirmDialog, PageHeader, cx } from "@/components/ui";
+import { can } from "@/lib/rbac";
 
 const DAY_ORDER = ["Saturday", "Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday"];
 const PROGRAM_TONE = { Beginner: "brand", Intermediate: "lime", Advanced: "slate" };
@@ -25,8 +26,8 @@ export default function SchedulePage() {
 
   // Adding a slot needs the full instructor roster (admin-only endpoint).
   // Deleting is allowed for admins and for instructors within their branch.
-  const canAdd = user.role === "admin";
-  const canDelete = ["admin", "instructor"].includes(user.role);
+  const canAdd = can(user.role, "schedules.create") && can(user.role, "staff.manage"); // UI needs the staff roster
+  const canDelete = can(user.role, "schedules.delete");
 
   const load = useCallback(() => api("/api/schedules").then(setSchedules).finally(() => setLoading(false)), []);
   useEffect(() => {

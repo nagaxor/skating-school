@@ -90,19 +90,24 @@ scripts/localdb.py       Local isolated Postgres manager (see §4)
 scripts/security-smoke.mjs  E2E security test against the running local app (`npm run test:security`)
 ```
 
-### Authorization rules (READ before touching any API) — IDOR protection
-- **Allow-list roles, never deny-list.** Use `isStaff(ctx)` / `isAdmin(ctx)` from `lib/access.js`. Writing `role === "student" → 403`
-  is forbidden: when the `guardian` role was added (2026-11-14), every such check would have given guardians staff access.
-- **All student-related reads go through `studentScope(ctx)`** (admin {} · instructor own club · student self · guardian linked children ·
-  unknown role → nothing). Pattern: `db.student.findFirst({ where: { id, ...studentScope(ctx) } })`,
-  `db.payment.findMany({ where: { student: studentScope(ctx), ...(studentId && { studentId }) } })`. A query filter may only NARROW the scope.
-- Out-of-scope single records return **404, not 403**, so ids can't be probed.
-- Schedules and notices use `visibleClubIds(ctx)` (null = all).
-- Linking a guardian to a child grants data access, so **only admins** can do it (`/api/guardians`).
+### RBAC (READ before touching any API or page): two layers, both required
+- **Layer 1, PERMISSION:** `src/lib/rbac.js` is the ONLY place that says which role may do what (ROLES, PERMISSIONS with labels and scope notes,
+  ROLE_PERMISSIONS, ROUTE_PERMISSIONS for dashboard pages). APIs call `requirePermission(ctx, "payments.create")` (lib/access.js).
+  The menu (`visible()` in DashboardShell), the page guard (`canAccessPath` → "No access" screen), the buttons (`can(user.role, perm)`),
+  the **Roles & Access** page (/dashboard/roles) and the automated matrix test ALL read this file.
+- **Layer 2, SCOPE:** `studentScope(ctx)` (admin {} · instructor own club · student self · guardian linked children · unknown role → nothing)
+  and `visibleClubIds(ctx)`. Pattern: `db.student.findFirst({ where: { id, ...studentScope(ctx) } })`, and filters only NARROW the scope.
+  Out-of-scope records → **404** (ids can't be probed). Some scope rules are extra checks in routes (e.g. instructors delete only their own notices).
+- **Never** gate on roles ad hoc (`role === "admin"` → allow, or `role === "student"` → deny). The old helpers isStaff/isAdmin/requireContext
+  were removed on purpose. Checking the TARGET user's role for business rules (e.g. "can't remove the last admin") is fine.
+- **Deny by default:** an unknown role, unknown permission, or unlisted dashboard path → no access.
+- **Adding a feature:** add a permission to PERMISSIONS → grant it in ROLE_PERMISSIONS → use requirePermission in the route → add the route
+  to ROUTE_PERMISSIONS if it's a page → add the endpoint to the ENDPOINTS list in scripts/security-smoke.mjs.
+- Linking a guardian to a child grants data access, so only `guardians.manage` (admin) can do it.
 
 ### API route pattern (follow this for new routes)
 1. `if (!assertSameOrigin(request)) return json({error:"Invalid origin"},403)` for POST/PUT/PATCH/DELETE
-2. `const { ctx, response } = await requireContext(["admin", ...]); if (response) return response;`
+2. `const ctx = await getAuthContext(); { const denied = requirePermission(ctx, "x.y"); if (denied) return denied; }`
 3. Parse the body with a Zod schema from `validation.js` (`safeParse`, then 400 on failure)
 4. Scope the data: **instructors → only their club; students → only their own records**
 5. Return through `json(...)` (sets `Cache-Control: no-store`)
@@ -172,7 +177,8 @@ to reset it, re-run `db:bootstrap-admin` with a new password).
 - `npm run build`
 - `curl http://localhost:3000/api/health` → `{"status":"ok","database":"ok"}`
 - Manually smoke-test login, attendance, payment → receipt, admission, and role restrictions.
-- `ADMIN_EMAIL=... ADMIN_PASSWORD=... npm run test:security`: ~50 end-to-end security checks, including **guardian IDOR isolation**
+- `ADMIN_EMAIL=... ADMIN_PASSWORD=... npm run test:security`: 49 checks, including the **RBAC matrix** (34 endpoints × 4 roles = 136 cells,
+  read from lib/rbac.js; empty bodies, so nothing is changed) and **guardian IDOR isolation**
   (guardian A vs B across students, payments, attendance, receipts, plus every mutation and admin endpoint) (local only; it refuses a non-localhost URL).
   It creates and deletes a temporary instructor. Run it after touching auth/access/API code.
 - There are no unit tests yet.
@@ -282,6 +288,10 @@ to reset it, re-run `db:bootstrap-admin` with a new password).
 
 ## Changelog
 <!-- Newest first. Format: YYYY-MM-DD — what changed — files touched -->
+- **2026-11-14** — **RBAC.** New `src/lib/rbac.js` (29 permissions, 4 roles, route→permission map, `can()`, `canAccessPath()`). Every API
+  route now uses `requirePermission` (removed isStaff/isAdmin/requireContext). Menu, page guard ("No access" screen + header label) and buttons
+  use the same matrix. New admin page **Roles & Access** (/dashboard/roles). The security test gained a full matrix check (136 cells, all pass).
+  Files: lib/rbac.js, lib/access.js, all src/app/api/**, DashboardShell.js, dashboard pages, dashboard/roles/page.js, scripts/security-smoke.mjs.
 - **2026-11-14** — **SEO.** Root metadata (metadataBase, title template, keywords, OG/Twitter, robots), per-page metadata with canonicals,
   robots.txt, sitemap.xml, a generated OG share image, JSON-LD (organization + branches, courses with BDT prices, FAQPage, HowTo,
   breadcrumbs), noindex on login/dashboard, admission metadata via layout. Fixed sub-pages missing og:image; home description shortened to

@@ -7,13 +7,14 @@ import { api } from "@/lib/api";
 import { Icon } from "@/components/Icons";
 import { Badge, PageLoading, EmptyState, StatCard, Avatar, cx } from "@/components/ui";
 import GuardianHome from "@/components/GuardianHome";
+import { can } from "@/lib/rbac";
 
 const DAYS = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
 const taka = (n) => `৳${Number(n || 0).toLocaleString("en-IN")}`;
 
 export default function DashboardHome() {
   const { user } = useAuth();
-  if (user.role === "guardian") return <GuardianHome user={user} />;
+  if (can(user.role, "portal.children")) return <GuardianHome user={user} />;
   return <MemberHome user={user} />;
 }
 
@@ -50,7 +51,7 @@ function MemberHome({ user }) {
             {greet}, {user.name.split(" ")[0]}
           </h2>
         </div>
-        {["admin", "instructor"].includes(user.role) && (
+        {can(user.role, "payments.create") && (
           <div className="flex gap-2">
             <Link href="/dashboard/attendance" className={cx.btnSecondary}><Icon.Clipboard width={16} height={16} /> Attendance</Link>
             <Link href="/dashboard/fees" className={cx.btnPrimary}><Icon.Plus width={16} height={16} /> Record payment</Link>

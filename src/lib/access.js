@@ -1,5 +1,6 @@
 import { db } from "@/lib/db";
 import { getSession, forbiddenResponse, unauthorizedResponse } from "@/lib/auth";
+import { can } from "@/lib/rbac";
 
 export async function getAuthContext() {
   const session = await getSession();
@@ -32,13 +33,18 @@ export async function getAuthContext() {
   return { session, user };
 }
 
-// ── Authorization helpers ────────────────────────────────────────────────
-// RULE: always ALLOW-list roles. Never write `role === "student" → deny`,
-// because any new role (e.g. guardian) would silently fall through to
-// staff/admin access. Unknown roles must end up with no access.
-export const STAFF_ROLES = ["admin", "instructor"];
-export const isStaff = (ctx) => STAFF_ROLES.includes(ctx?.user?.role);
-export const isAdmin = (ctx) => ctx?.user?.role === "admin";
+// ── Authorization ────────────────────────────────────────────────────────
+// Layer 1 = PERMISSION: requirePermission(ctx, "x.y") against lib/rbac.js.
+// Layer 2 = SCOPE: studentScope / visibleClubIds below (which records).
+// Never check roles ad hoc in routes (no `role === "admin"` gates). Unknown
+// roles and unknown permissions are denied by default.
+//   const ctx = await getAuthContext();
+//   { const denied = requirePermission(ctx, "payments.create"); if (denied) return denied; }
+export function requirePermission(ctx, permission) {
+  if (!ctx) return unauthorizedResponse();
+  if (!can(ctx.user.role, permission)) return forbiddenResponse();
+  return null;
+}
 
 const NONE = { id: "__none__" };
 
@@ -58,7 +64,7 @@ export function studentScope(ctx) {
 
 // Club ids whose schedules/notices this user may see; null = all (admin).
 export async function visibleClubIds(ctx) {
-  if (isAdmin(ctx)) return null;
+  if (ctx?.user?.role === "admin") return null;
   if (ctx?.user?.role === "instructor") return ctx.user.instructor?.clubId ? [ctx.user.instructor.clubId] : [];
   if (ctx?.user?.role === "student") return ctx.user.student?.clubId ? [ctx.user.student.clubId] : [];
   if (ctx?.user?.role === "guardian") {
@@ -66,13 +72,6 @@ export async function visibleClubIds(ctx) {
     return [...new Set(kids.map((k) => k.clubId).filter(Boolean))];
   }
   return [];
-}
-
-export async function requireContext(roles = []) {
-  const ctx = await getAuthContext();
-  if (!ctx) return { ctx: null, response: unauthorizedResponse() };
-  if (roles.length && !roles.includes(ctx.user.role)) return { ctx: null, response: forbiddenResponse() };
-  return { ctx, response: null };
 }
 
 export function assertSameOrigin(request) {

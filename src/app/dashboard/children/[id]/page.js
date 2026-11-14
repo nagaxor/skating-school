@@ -8,6 +8,7 @@ import { Icon } from "@/components/Icons";
 import { Avatar, Badge, EmptyState, PageLoading, cx } from "@/components/ui";
 import AttendanceGrid from "@/components/AttendanceGrid";
 import { useMyChildren, TODAY, taka } from "@/components/GuardianHome";
+import { can } from "@/lib/rbac";
 
 // Guardian view of ONE linked child. Data comes only from /api/my-children,
 // which the server scopes to this guardian's links, so an id that isn't
@@ -18,7 +19,7 @@ export default function ChildPage() {
   const { data, error } = useMyChildren();
   const [tab, setTab] = useState("attendance");
 
-  if (user.role !== "guardian") return <div className={cx.card}><EmptyState icon={Icon.Lock} title="This page is for guardians" /></div>;
+  if (!can(user.role, "portal.children")) return <div className={cx.card}><EmptyState icon={Icon.Lock} title="This page is for guardians" /></div>;
   if (error) return <div className={cx.card}><EmptyState icon={Icon.AlertTriangle} title="Couldn't load" hint={error} /></div>;
   if (!data) return <PageLoading statCards={0} />;
 

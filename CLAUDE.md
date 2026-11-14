@@ -139,6 +139,16 @@ to reset it, re-run `db:bootstrap-admin` with a new password).
 - Login rate limit keys on `x-forwarded-for`; locally that's missing, so all requests share the key `login:unknown`.
 - `npm audit`: several dev-tooling advisories (brace-expansion, js-yaml, effect, deepmerge-ts). Mostly transitive via eslint/prisma.
 
+## 6b. Git workflow & restore points
+- Remote: `origin` = `github.com/ShahriyarH10/skating-school`. **Vercel auto-deploys `main` to production**, so do the work on a branch and merge only when it's verified.
+- Working branch: `local-dev-setup`.
+- Before each bigger change, create an annotated tag `checkpoint-YYYY-MM-DD-<topic>` so the owner can roll back:
+  - see the code at that point: `git checkout <tag>`
+  - undo everything after it on the current branch: `git reset --hard <tag>` (destructive, so confirm first)
+- Tags so far: `checkpoint-2026-11-14-local-setup` (local env + this file).
+- ⚠️ Push status: on 2026-11-14 pushing failed with 403, because the GitHub account `nagaxor` on this PC has no write access to the repo.
+  The commit and tag exist **locally only** until access is fixed; then run `git push -u origin local-dev-setup --follow-tags`.
+
 ## 7. Upgrade backlog (prioritized — pick from the top; move to Changelog when done)
 1. **Safe patch/minor bumps:** react/react-dom 19.3, zod 4.6, jose 6.2, postcss, autoprefixer, bcryptjs, speed-insights; then `npm audit fix` (non-force).
 2. **Wire up or remove** Vercel Analytics/SpeedInsights in `layout.js` (check the CSP allows it).
@@ -154,6 +164,7 @@ to reset it, re-run `db:bootstrap-admin` with a new password).
 
 ## Changelog
 <!-- Newest first. Format: YYYY-MM-DD — what changed — files touched -->
+- **2026-11-14** — Committed the local setup on branch `local-dev-setup` and tagged `checkpoint-2026-11-14-local-setup`. Push to GitHub failed (403, no write access for `nagaxor`). Added §6b Git workflow. Files: `CLAUDE.md`.
 - **2026-11-14** — Set up the isolated local environment: Python 3.12 `.venv` with `pgserver` (Postgres 16.2), `scripts/localdb.py`
   (setup/start/stop/status/reset/psql on 127.0.0.1:5433), `npm run local:*` scripts, generated local `.env`, added `.env.example`,
   `requirements-dev.txt`, gitignored `.venv/` and `.localdb/`. Applied migrations 0001–0002 locally, created local admin

@@ -69,20 +69,20 @@ export default function BranchesPage() {
           {clubs.map((c) => (
             <div key={c.id} className={`${cx.card} p-5 flex flex-col gap-4 transition-opacity ${c.status === "inactive" ? "opacity-60" : ""}`}>
               <div className="flex items-start justify-between gap-2">
-                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-teal to-teal-light flex items-center justify-center text-white flex-shrink-0">
+                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-brand-600 to-brand-400 flex items-center justify-center text-white flex-shrink-0">
                   <Icon.Building width={18} height={18} />
                 </div>
                 <Badge tone={c.status === "active" ? "emerald" : "slate"}>{c.status === "active" ? "Active" : "Inactive"}</Badge>
               </div>
               <div>
-                <div className="font-bold text-slate-800 dark:text-slate-100">{c.name}</div>
+                <div className="font-display font-semibold text-ink-950 dark:text-white">{c.name}</div>
                 <div className="text-xs text-slate-500 dark:text-slate-400 flex items-center gap-1 mt-1"><Icon.MapPin width={12} height={12} />{c.location}</div>
               </div>
               <div className="flex items-center gap-4 text-xs text-slate-500 dark:text-slate-400">
                 <span className="flex items-center gap-1"><Icon.Users width={13} height={13} />{c.studentCount} student{c.studentCount !== 1 && "s"}</span>
                 <span className="flex items-center gap-1"><Icon.Shield width={13} height={13} />{c.instructorCount} instructor{c.instructorCount !== 1 && "s"}</span>
               </div>
-              <div className="flex items-center gap-2 pt-2 border-t border-slate-100 dark:border-slate-700 mt-auto">
+              <div className="flex items-center gap-2 pt-2 border-t border-slate-100 dark:border-white/[0.07] mt-auto">
                 <button onClick={() => setEditing(c)} className={cx.btnGhost}><Icon.Edit width={13} height={13} /> Edit</button>
                 <button disabled={busyId === c.id} onClick={() => toggleStatus(c)} className={cx.btnGhost + " disabled:opacity-40"}>
                   {c.status === "active" ? "Deactivate" : "Activate"}
@@ -131,7 +131,7 @@ function BranchModal({ title, initial, onClose, onSave }) {
         <button disabled={!form.name || !form.location || submitting} onClick={submit} className={cx.btnPrimary}>{submitting ? "Saving…" : "Save"}</button>
       </>}
     >
-      {error && <div className="bg-red-50 text-red-600 text-sm px-4 py-3 rounded-xl">{error}</div>}
+      {error && <div className="bg-red-500/[0.07] ring-1 ring-red-500/20 text-red-700 dark:text-red-300 text-sm px-4 py-3 rounded-xl">{error}</div>}
       <div><label className={cx.label}>Branch name *</label><input className={cx.input} placeholder="e.g. Uttara Skating Club" value={form.name} onChange={(e) => u("name", e.target.value)} /></div>
       <div><label className={cx.label}>Location *</label><input className={cx.input} placeholder="e.g. Uttara, Dhaka" value={form.location} onChange={(e) => u("location", e.target.value)} /></div>
     </ModalShell>

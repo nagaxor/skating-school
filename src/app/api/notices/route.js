@@ -10,7 +10,7 @@ export async function GET(){
     : ctx.user.role==='instructor' ? (ctx.user.instructor?.clubId ? {OR:[{audience:'All'},{audience:(await db.club.findUnique({where:{id:ctx.user.instructor.clubId},select:{name:true}}))?.name || '__none__'}]} : {audience:'__none__'})
     : {};
   const notices=await db.notice.findMany({where,include:{author:{select:{name:true}}},orderBy:{date:'desc'},take:300});
-  return json(notices.map(n=>({id:n.id,title:n.title,body:n.body,audience:n.audience,urgent:n.urgent,author:n.author.name,date:n.date.toISOString().slice(0,10)})));
+  return json(notices.map(n=>({id:n.id,title:n.title,body:n.body,audience:n.audience,urgent:n.urgent,author:n.author.name,mine:n.authorId===ctx.user.id,date:n.date.toISOString().slice(0,10)})));
 }
 
 export async function POST(request){

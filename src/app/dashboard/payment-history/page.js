@@ -4,7 +4,8 @@ import { useState, useEffect, useMemo } from "react";
 import { useAuth } from "@/lib/auth-context";
 import { api } from "@/lib/api";
 import { Icon } from "@/components/Icons";
-import { Badge, PageLoading, EmptyState, cx } from "@/components/ui";
+import { Badge, PageLoading, EmptyState, PageHeader, cx } from "@/components/ui";
+import { downloadCsv } from "@/lib/csv";
 import Link from "next/link";
 
 const monthLabel = (y, m) => new Date(y, m, 1).toLocaleDateString("en-US", { month: "long", year: "numeric" });
@@ -68,8 +69,23 @@ export default function PaymentHistoryPage() {
   const unpaidCount = students.length - paidCount;
   const collected = Array.from(paidByStudent.values()).reduce((sum, p) => sum + p.amount, 0);
 
+  const exportCsv = () => downloadCsv(`fee-tracker-${month.replace(/\s+/g, "-")}.csv`, rows, [
+    { label: "Student", value: (r) => r.student.name },
+    { label: "Guardian", value: (r) => r.student.guardian },
+    { label: "Phone", value: (r) => r.student.phone },
+    { label: "Branch", value: (r) => r.student.club },
+    { label: "Program", value: (r) => r.student.program },
+    { label: "Month", value: () => month },
+    { label: "Status", value: (r) => (r.payment ? "Paid" : "Due") },
+    { label: "Amount", value: (r) => r.payment?.amount ?? "" },
+    { label: "Receipt", value: (r) => r.payment?.receiptNo ?? "" },
+    { label: "Paid on", value: (r) => r.payment?.date ?? "" },
+  ]);
+
   return (
     <div className="space-y-5">
+      <PageHeader title="Fee tracker" subtitle={`Monthly fee status for ${month}`}
+        actions={<button onClick={exportCsv} disabled={!rows.length} className={cx.btnSecondary}><Icon.Download width={15} height={15} /> Export CSV</button>} />
       <div className="flex flex-wrap items-center gap-3">
         <div className="relative">
           <Icon.Calendar width={15} height={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500 pointer-events-none" />
@@ -101,10 +117,10 @@ export default function PaymentHistoryPage() {
           <EmptyState icon={Icon.Wallet} title="No students match" hint="Try a different search, branch, or status filter." />
         ) : (
           <>
-            <div className="md:hidden divide-y divide-slate-100">
+            <div className="md:hidden divide-y divide-ink-100 dark:divide-white/[0.05]">
               {rows.map(({ student: s, payment: p }) => (
                 <div key={s.id} className="flex items-center gap-3 p-4">
-                  <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-teal to-amber flex items-center justify-center text-white text-[11px] font-bold flex-shrink-0">{s.avatar || s.name[0]}</div>
+                  <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-brand-500 to-brand-300 flex items-center justify-center text-white text-[11px] font-bold flex-shrink-0">{s.avatar || s.name[0]}</div>
                   <div className="min-w-0 flex-1">
                     <div className="font-semibold text-sm text-slate-800 dark:text-slate-100 truncate">{s.name}</div>
                     <div className="text-xs text-slate-500 dark:text-slate-400 truncate">{s.club || "Unassigned"} · {s.program}</div>
@@ -133,14 +149,14 @@ export default function PaymentHistoryPage() {
                     <tr key={s.id} className={cx.tr}>
                       <td className={cx.td}>
                         <div className="flex items-center gap-3">
-                          <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-teal to-amber flex items-center justify-center text-white text-[11px] font-bold flex-shrink-0">{s.avatar || s.name[0]}</div>
+                          <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-brand-500 to-brand-300 flex items-center justify-center text-white text-[11px] font-bold flex-shrink-0">{s.avatar || s.name[0]}</div>
                           <span className="font-semibold text-slate-800 dark:text-slate-100">{s.name}</span>
                         </div>
                       </td>
                       <td className={cx.td + " text-xs"}>{s.club || "Unassigned"}</td>
                       <td className={cx.td}>{s.program}</td>
                       <td className={cx.td}>{p ? <Badge tone="emerald">Paid</Badge> : <Badge tone="red">Unpaid</Badge>}</td>
-                      <td className={cx.td + " font-bold text-slate-800 dark:text-slate-100"}>{p ? `৳${p.amount.toLocaleString()}` : "—"}</td>
+                      <td className={cx.td + " font-display font-semibold text-ink-950 dark:text-white"}>{p ? `৳${p.amount.toLocaleString()}` : "—"}</td>
                       <td className={cx.td + " text-slate-400 dark:text-slate-500"}>{p ? p.date : "—"}</td>
                       <td className={cx.td}>{p ? <Link href={`/dashboard/receipt/${p.id}`} className={cx.link}>View →</Link> : "—"}</td>
                     </tr>
@@ -163,7 +179,7 @@ function SummaryCard({ icon: IconComp, label, value, tone, onClick, active }) {
       <div className={`w-9 h-9 rounded-xl bg-gradient-to-br ${tones[tone]} flex items-center justify-center text-white mb-3`}>
         <IconComp width={16} height={16} />
       </div>
-      <div className="text-xl sm:text-2xl font-extrabold text-slate-900 dark:text-slate-100 tracking-tight truncate">{value}</div>
+      <div className="text-xl sm:text-2xl font-display font-semibold tracking-tight text-slate-900 dark:text-slate-100 tracking-tight truncate">{value}</div>
       <div className="text-xs font-medium text-slate-500 dark:text-slate-400 mt-0.5">{label}</div>
     </Comp>
   );

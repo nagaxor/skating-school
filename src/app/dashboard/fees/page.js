@@ -4,7 +4,8 @@ import { useState, useEffect } from "react";
 import { useAuth } from "@/lib/auth-context";
 import { api } from "@/lib/api";
 import { Icon } from "@/components/Icons";
-import { PageLoading, EmptyState, Toast, ModalShell, cx } from "@/components/ui";
+import { PageLoading, EmptyState, Toast, ModalShell, PageHeader, cx } from "@/components/ui";
+import { downloadCsv } from "@/lib/csv";
 import Link from "next/link";
 
 const METHOD_LABEL = { cash: "Cash", bkash: "bKash", nagad: "Nagad", rocket: "Rocket", bank_transfer: "Bank Transfer" };
@@ -37,20 +38,27 @@ export default function FeesPage() {
 
   return (
     <div className="space-y-5">
-      <div className="flex flex-wrap gap-3 items-center justify-between">
-        <div className="flex items-center gap-2 text-sm text-slate-500 dark:text-slate-400">
-          <Icon.Wallet width={15} height={15} />
-          <span className="font-semibold text-slate-700 dark:text-slate-300">৳{total.toLocaleString()}</span> total across {payments.length} payment{payments.length !== 1 ? "s" : ""}
-        </div>
-        {canRecord && <button onClick={() => setShowModal(true)} className={cx.btnPrimary}><Icon.Plus width={16} height={16} /> Record Payment</button>}
-      </div>
+      <PageHeader
+        title={canRecord ? "Fees & payments" : "My payments"}
+        subtitle={`৳${total.toLocaleString("en-IN")} across ${payments.length} payment${payments.length !== 1 ? "s" : ""}`}
+        actions={<>
+          {payments.length > 0 && (
+            <button className={cx.btnSecondary} onClick={() => downloadCsv(`payments-${new Date().toISOString().slice(0, 10)}.csv`, payments, [
+              { label: "Receipt", value: "receiptNo" }, { label: "Date", value: "date" }, { label: "Student", value: "studentName" },
+              { label: "Branch", value: "club" }, { label: "Type", value: "type" }, { label: "Month", value: "month" },
+              { label: "Method", value: "method" }, { label: "Amount (BDT)", value: "amount" },
+            ])}><Icon.Download width={15} height={15} /> Export</button>
+          )}
+          {canRecord && <button onClick={() => setShowModal(true)} className={cx.btnPrimary}><Icon.Plus width={16} height={16} /> Record payment</button>}
+        </>}
+      />
 
       <div className={cx.card}>
         {payments.length === 0 ? (
           <EmptyState icon={Icon.CreditCard} title="No payments recorded" />
         ) : (
           <>
-            <div className="md:hidden divide-y divide-slate-100">
+            <div className="md:hidden divide-y divide-ink-100 dark:divide-white/[0.05]">
               {payments.map((p) => (
                 <Link key={p.id} href={`/dashboard/receipt/${p.id}`} className="block p-4 active:bg-slate-50 dark:active:bg-slate-700/60 transition-colors">
                   <div className="flex items-start justify-between gap-3">
@@ -58,7 +66,7 @@ export default function FeesPage() {
                       {canRecord && <div className="font-semibold text-[15px] text-slate-800 dark:text-slate-100 truncate">{p.studentName}</div>}
                       <div className="text-xs text-slate-400 dark:text-slate-500 mt-0.5">{p.receiptNo} · {p.date}</div>
                     </div>
-                    <div className="font-bold text-slate-800 dark:text-slate-100 text-[15px] flex-shrink-0">৳{p.amount.toLocaleString()}</div>
+                    <div className="font-display font-semibold text-ink-950 dark:text-white text-[15px] flex-shrink-0">৳{p.amount.toLocaleString()}</div>
                   </div>
                   <div className="flex items-center gap-2 mt-2 text-xs text-slate-500 dark:text-slate-400">
                     <span className="bg-slate-100 rounded-full px-2.5 py-1 font-medium">{TYPE_LABEL[p.type] || p.type}</span>
@@ -80,7 +88,7 @@ export default function FeesPage() {
                     <tr key={p.id} className={cx.tr}>
                       {canRecord && <td className={cx.td + " font-semibold"}>{p.studentName}</td>}
                       <td className={cx.td + " font-semibold text-slate-600 dark:text-slate-300"}>{p.receiptNo}</td>
-                      <td className={cx.td + " font-bold text-slate-800 dark:text-slate-100"}>৳{p.amount.toLocaleString()}</td>
+                      <td className={cx.td + " font-display font-semibold text-ink-950 dark:text-white"}>৳{p.amount.toLocaleString()}</td>
                       <td className={cx.td}>{TYPE_LABEL[p.type] || p.type}</td>
                       <td className={cx.td}>{p.month}</td>
                       <td className={cx.td}>{METHOD_LABEL[p.method] || p.method}</td>
@@ -134,7 +142,7 @@ function AddPaymentModal({ students, onClose, onAdd }) {
         <button disabled={!form.studentId || !form.amount || !form.month || submitting} onClick={submit} className={cx.btnPrimary}>{submitting ? "Recording…" : "Record Payment"}</button>
       </>}
     >
-      {error && <div className="bg-red-50 text-red-600 text-sm px-4 py-3 rounded-xl">{error}</div>}
+      {error && <div className="bg-red-500/[0.07] ring-1 ring-red-500/20 text-red-700 dark:text-red-300 text-sm px-4 py-3 rounded-xl">{error}</div>}
       {students.length === 0 ? (
         <div className="text-sm text-slate-500 dark:text-slate-400">No students available. Add a student first.</div>
       ) : (

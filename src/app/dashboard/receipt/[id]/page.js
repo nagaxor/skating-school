@@ -52,15 +52,15 @@ export default function ReceiptPage() {
       </Link>
 
       <div className="print-area max-w-2xl mx-auto">
-        <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-card border border-teal/40 overflow-hidden animate-scaleIn">
+        <div className="bg-white dark:bg-ink-900 rounded-2xl shadow-card border border-teal/40 overflow-hidden animate-scaleIn">
           {/* Header band */}
           <div className="relative bg-gradient-to-br from-navy via-teal-dark to-teal px-7 pt-7 pb-8 text-center overflow-hidden">
             <div className="absolute inset-0 opacity-[0.08]" style={{ backgroundImage: "radial-gradient(circle at 1px 1px, #fff 1px, transparent 0)", backgroundSize: "20px 20px" }} />
-            <span className="absolute top-4 right-4 inline-flex items-center gap-1 bg-emerald-400 text-emerald-950 text-[11px] font-extrabold px-2.5 py-1 rounded-full tracking-wide">
+            <span className="absolute top-4 right-4 inline-flex items-center gap-1 bg-emerald-400 text-emerald-950 text-[11px] font-display font-semibold tracking-tight px-2.5 py-1 rounded-full tracking-wide">
               <Icon.Check width={12} height={12} strokeWidth={3} /> PAID
             </span>
             <div className="relative w-12 h-12 rounded-2xl bg-white/15 backdrop-blur border border-white/20 flex items-center justify-center text-2xl mx-auto mb-3">⛸</div>
-            <h2 className="relative text-lg font-extrabold text-white">Online Skating School</h2>
+            <h2 className="relative text-lg font-display font-semibold tracking-tight text-white">Online Skating School</h2>
             <p className="relative text-[11px] text-teal-100/90 mt-1">Dhaka, Bangladesh · +880 1707 080 260</p>
             <p className="relative text-[11px] text-teal-100/90">onlineskatingschool@gmail.com</p>
           </div>
@@ -87,7 +87,7 @@ export default function ReceiptPage() {
               </div>
             </div>
 
-            <div className="border-t border-dashed border-slate-200 dark:border-slate-700" />
+            <div className="border-t border-dashed border-slate-200 dark:border-white/[0.07]" />
 
             <div>
               <h3 className="text-[11px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-3">Payment</h3>
@@ -106,7 +106,7 @@ export default function ReceiptPage() {
 
             <div className="bg-gradient-to-r from-emerald-50 to-teal-50 border border-emerald-200/70 rounded-xl px-5 py-4 flex items-center justify-between">
               <span className="text-sm font-bold text-emerald-800">Amount Paid</span>
-              <span className="text-2xl font-extrabold text-emerald-700 tracking-tight">৳{receipt.amount.toLocaleString()}</span>
+              <span className="text-2xl font-display font-semibold tracking-tight text-emerald-700 tracking-tight">৳{receipt.amount.toLocaleString()}</span>
             </div>
 
             <div className="text-center text-[11px] text-slate-400 dark:text-slate-500 pt-1">

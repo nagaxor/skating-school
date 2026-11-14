@@ -50,12 +50,21 @@ src/
     api.js               Client fetch wrapper (redirects to /login on 401)
     auth-context.js      Client AuthProvider/useAuth
     theme-context.js     Dark mode (localStorage key `oss-theme`)
-  components/            DashboardShell (nav/sidebar), ui.js (shared UI), Icons.js, PWARegister.js
+  components/
+    ui.js                Shared UI kit + `cx` class tokens: Badge, Avatar, StatCard, PageHeader, ModalShell (ESC closes),
+                         ConfirmDialog (use instead of window.confirm), Toast (auto-dismiss), SearchInput, Spinner, EmptyState
+    Brand.js             LogoMark / Logo / Wordmark + RinkLines motif (SVG; uses useId for unique gradient ids)
+    DashboardShell.js    Sidebar, top bar, mobile tab bar + "More" sheet, Ctrl/Cmd+K command palette
+    CommandPalette.js    Palette UI (items = nav + quick actions, filtered by role)
+    AccountActions.js    ResetPasswordModal, generatePassword(), strongPassword(), PASSWORD_HINT
+    Icons.js, PWARegister.js
+  lib/csv.js             downloadCsv(filename, rows, columns): client CSV export, formula-injection safe, UTF-8 BOM
   app/
     page.js              Public landing page
     login/, admission/   Public pages (admission = long public application form, incl. photo data URL)
-    dashboard/           Authenticated area: attendance, branches, fees, notices, payment-history, profile,
-                         receipt/[id], reports, schedule, settings, staff, students, students/[id]
+    dashboard/           Authenticated area: activity (admin audit log), attendance, branches, fees, notices,
+                         payment-history ("Fee Tracker"), profile ("Profile & Security"), receipt/[id], reports,
+                         schedule, settings, staff, students, students/[id]
     api/<resource>/route.js   admission, attendance, audit, auth(+password, +sessions), clubs, health,
                               instructors, notices, payments, receipts, schedules, settings, staff(+role),
                               students, users/status, users/password
@@ -144,22 +153,42 @@ to reset it, re-run `db:bootstrap-admin` with a new password).
   It creates and deletes a temporary instructor. Run it after touching auth/access/API code.
 - There are no unit tests yet.
 
-## 5. Conventions
+## 5. Design system (2026-11 redesign)
+- **Look:** a "premium sports club" feel. Deep **ink** neutrals, an **ice-cyan brand** accent, a **gold** highlight for premium and "featured" items.
+  The signature visual is the "rink lines" SVG (concentric track lanes plus a gliding light streak). No emoji logos.
+- **Tokens** (tailwind.config.js): `brand-50…950`, `ink-50…950`, `gold-200…600`. **`slate-*` is aliased to `ink`**, and `teal`/`navy`/`amber`
+  are legacy aliases (→ brand-600 / ink-950 / gold-400), so old class names still render on-palette. Prefer the new names in new code.
+- **Type:** Inter for UI (`font-sans`), **Sora** for headings and big numbers (`font-display`). Headings are semibold with tight tracking.
+  Use `tabular` for numbers. ৳ falls back to a system glyph (Sora/Inter lack it); that's expected.
+- **Surfaces:** pages sit on `bg-ink-50` (dark: `ink-950`); cards = `cx.card` (white, hairline shadow; dark: ink-900/70 + white/7 ring).
+  Primary button = ink-950 (dark: white) via `cx.btnPrimary`; the brand-coloured CTA = `cx.btnBrand`; destructive = `cx.btnDanger`.
+- **Page skeleton:** every dashboard page starts with `<PageHeader title subtitle actions />`, then cards. Lists use
+  `divide-ink-100 dark:divide-white/[0.05]`. Destructive actions always go through `ConfirmDialog` with a specific message.
+- **Dark mode:** always pair light classes with `dark:` variants; translucent tints (`bg-red-500/[0.07]`) work in both themes.
+- **Motion:** `animate-rise` (hero), `animate-glide` (rink streak), `animate-scaleIn` (dialogs). Respect reduced motion (globals.css does).
+- Utilities in globals.css: `.grain` (noise overlay), `.hairline-grid`, `.tabular`, `.text-balance`; global `:focus-visible` ring.
+- Screenshots: a headless Chrome DevTools-protocol script was used during the redesign (kept outside the repo). Use real browser checks for UI changes.
+
+## 6. Conventions
 - JavaScript only, App Router, `"use client"` pages under dashboard fetch through `src/lib/api.js`.
 - New DB changes: edit `schema.prisma`, then `npx prisma migrate dev --name <name>` locally (creates the migration folder; commit it).
   Prod uses `prisma migrate deploy` only. Never `migrate reset` against prod.
 - Dark mode: always pair light classes with `dark:` variants (recent commits did a dark-mode pass).
 - Commit style: conventional commits (`feat:`, `fix:`, …).
 
-## 6. Known issues / gotchas
+## 7. Known issues / gotchas
 - `DEPLOY.md` references `DEPLOY-CLOUDFLARE.md`, which doesn't exist.
 - Commits 60da055/3a259c2 say Analytics/SpeedInsights were added, but `src/app/layout.js` doesn't render them.
 - `rate-limit.js` is in-memory, so on Vercel serverless each instance has its own counters (weak protection).
 - Student `photo` is stored as a base64 data URL in Postgres (fine for small use, bloats the DB at scale).
-- Login rate limit keys on `x-forwarded-for`; locally that's missing, so all requests share the key `login:unknown`.
+- Locally there's no proxy IP header, so `clientIp()` returns `local` or `::1`, and all local logins share one per-IP bucket (20 per 15 min).
+- Local DB currently holds **sample data** (3 branches, 3 coaches `coach1-3@local.test` / `Coach-pass-1`, 16 students
+  `student1-16@local.test` / `Student-pass-1`, payments, notices, schedule). It was seeded through the API from a scratchpad script, not
+  committed. Wipe it with `localdb.py reset` + setup + migrate + bootstrap-admin.
+- The admission form (`/admission`) only got the token/colour pass. Its layout is still the old design (white card) → backlog.
 - `npm audit`: several dev-tooling advisories (brace-expansion, js-yaml, effect, deepmerge-ts). Mostly transitive via eslint/prisma.
 
-## 6b. Git workflow & restore points
+## 7b. Git workflow & restore points
 - Remotes:
   - `origin` = `github.com/nagaxor/skating-school` (**owner's own repo, kept PRIVATE**). Push here.
   - `upstream` = `github.com/ShahriyarH10/skating-school` (original, read-only for us; `git fetch upstream` to get its updates).
@@ -168,11 +197,15 @@ to reset it, re-run `db:bootstrap-admin` with a new password).
 - Before each bigger change, create an annotated tag `checkpoint-YYYY-MM-DD-<topic>` so the owner can roll back:
   - see the code at that point: `git checkout <tag>`
   - undo everything after it on the current branch: `git reset --hard <tag>` (destructive, so confirm first)
-- Tags so far: `checkpoint-2026-11-14-local-setup` (local env + this file).
+- Tags so far: `checkpoint-2026-11-14-local-setup` (local env + this file), `checkpoint-2026-11-14-before-redesign` (before redesign branch).
+- Branch `redesign`: phase 1 security, phase 2 design + features. Not merged to `main` yet.
 - `nagaxor` has no write access to `upstream` (403 on 2026-11-14), which is why the owner's own repo is `origin`.
 - Push: `git push -u origin main local-dev-setup --follow-tags`.
 
-## 7. Upgrade backlog (prioritized — pick from the top; move to Changelog when done)
+## 8. Upgrade backlog (prioritized — pick from the top; move to Changelog when done)
+0. **Merge `redesign` → `main`** after the owner reviews it locally (`main` deploys to Vercel); run `prisma migrate deploy` on prod first.
+0. Full restyle of `/admission` (multi-step form) and `students/[id]` detail page to the new layout; student detail: admin "Reset password".
+0. Nonce-based CSP (drop script `'unsafe-inline'`); persistent (DB) per-IP rate limiting.
 1. **Safe patch/minor bumps:** react/react-dom 19.3, zod 4.6, jose 6.2, postcss, autoprefixer, bcryptjs, speed-insights; then `npm audit fix` (non-force).
 2. **Wire up or remove** Vercel Analytics/SpeedInsights in `layout.js` (check the CSP allows it).
 3. **Add a test setup** (e.g. Vitest for lib/validation + API route tests against the local DB) and add it to `npm run check`.
@@ -187,6 +220,14 @@ to reset it, re-run `db:bootstrap-admin` with a new password).
 
 ## Changelog
 <!-- Newest first. Format: YYYY-MM-DD — what changed — files touched -->
+- **2026-11-14** — **Redesign phase 2: premium design + features** (branch `redesign`). New design system (tokens, Sora, logo, rink motif),
+  new landing (hero + product preview, programs, why-us, live branches, steps, FAQ), new login, new shell (sidebar, top bar,
+  Ctrl+K palette, mobile tabs), new overview (revenue chart, fee ring, student "next class" view). Feature work:
+  students (edit, deactivate/reactivate, filters, CSV export, confirm dialogs), staff (unified list, admin password reset with generator,
+  deactivate, role change with confirm), notices (delete; API returns `mine`), schedule (weekly board, delete, branch filter),
+  profile & security (strength meter, last sign-in, sign out everywhere), **Activity Log page**, fee tracker + payments CSV export,
+  attendance (only active students, "mark rest present", dark-mode fix). Fixed the `<html>` hydration warning (suppressHydrationWarning).
+  Verified: lint 0 errors, `npm run build` OK, security smoke 23/23, headless screenshots of all pages (light/dark/mobile).
 - **2026-11-14** — **Redesign phase 1: security hardening** (branch `redesign`, restore point `checkpoint-2026-11-14-before-redesign`).
   Migration `security_hardening` (User.sessionVersion/failedLogins/lockedUntil/lastLoginAt + AuditLog). Session revocation via `sv`,
   DB-backed login lockout, timing-safe login, password policy (letter+number) for new passwords, raster-only photo validation,

@@ -280,7 +280,7 @@ export default function AdmissionPage() {
                       i < step
                         ? "bg-teal text-white"
                         : i === step
-                        ? "bg-gradient-to-br from-teal to-teal-light text-white shadow-glow-teal scale-110"
+                        ? "bg-gradient-to-br from-brand-600 to-brand-400 text-white shadow-glow-teal scale-110"
                         : "bg-slate-100 text-slate-400"
                     }`}
                   >
@@ -299,16 +299,16 @@ export default function AdmissionPage() {
           <div className="px-5 sm:px-10 pt-5 sm:pt-8">
             {step === 0 && (
               <div className="flex items-center gap-3 mb-6">
-                <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-teal to-teal-light flex items-center justify-center text-xl flex-shrink-0">⛸</div>
+                <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-brand-600 to-brand-400 flex items-center justify-center text-xl flex-shrink-0">⛸</div>
                 <div>
-                  <h1 className="text-xl font-extrabold text-slate-900 leading-tight">Student Admission Form</h1>
+                  <h1 className="text-xl font-display font-semibold tracking-tight text-slate-900 leading-tight">Student Admission Form</h1>
                   <p className="text-xs text-slate-500 mt-0.5">A few quick steps — you'll get instant access to your student dashboard.</p>
                 </div>
               </div>
             )}
 
             {error && (
-              <div className="bg-red-50 text-red-600 text-sm px-4 py-3 rounded-xl mb-6 flex items-center gap-2 animate-slideUp">
+              <div className="bg-red-500/[0.07] ring-1 ring-red-500/20 text-red-700 dark:text-red-300 text-sm px-4 py-3 rounded-xl mb-6 flex items-center gap-2 animate-slideUp">
                 <Icon.AlertTriangle width={16} height={16} className="flex-shrink-0" />
                 {error}
               </div>

@@ -85,7 +85,9 @@ export default function DashboardShell({ user, children }) {
   const { logout } = useAuth();
   const { theme, toggleTheme } = useTheme();
 
-  const activeItem = [...MENU].reverse().find((m) => m.href && isActive(pathname, m));
+  const activeItem = pathname.startsWith("/dashboard/receipt/")
+    ? { label: "Receipt" }
+    : [...MENU].reverse().find((m) => m.href && isActive(pathname, m));
   const onATab = TABS.some((t) => isActive(pathname, t));
 
   useEffect(() => {

@@ -41,14 +41,14 @@ export default function StudentDetailPage() {
         <div className="flex flex-wrap items-center gap-5 mb-6">
           {student.photo ? (
             // eslint-disable-next-line @next/next/no-img-element -- inline base64 data URL, nothing for next/image to optimize
-            <img src={student.photo} alt={student.name} className="w-16 h-16 rounded-2xl object-cover flex-shrink-0 border border-slate-200 dark:border-slate-700" />
+            <img src={student.photo} alt={student.name} className="w-16 h-16 rounded-2xl object-cover flex-shrink-0 border border-slate-200 dark:border-white/[0.07]" />
           ) : (
-            <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-teal to-amber flex items-center justify-center text-white text-xl font-bold flex-shrink-0">
+            <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-brand-500 to-brand-300 flex items-center justify-center text-white text-xl font-bold flex-shrink-0">
               {student.avatar || student.name[0]}
             </div>
           )}
           <div>
-            <h2 className="text-xl font-extrabold text-slate-900 dark:text-slate-100">{student.name}</h2>
+            <h2 className="text-xl font-display font-semibold tracking-tight text-slate-900 dark:text-slate-100">{student.name}</h2>
             <div className="flex items-center gap-2 mt-1.5 flex-wrap">
               <Badge tone={PROGRAM_TONE[student.program] || "slate"}>{student.program}</Badge>
               <span className="text-xs text-slate-500 dark:text-slate-400">{student.club || "Unassigned"}</span>
@@ -56,7 +56,7 @@ export default function StudentDetailPage() {
             </div>
           </div>
         </div>
-        <div className="grid grid-cols-2 sm:grid-cols-3 gap-5 pt-5 border-t border-slate-100 dark:border-slate-700">
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-5 pt-5 border-t border-slate-100 dark:border-white/[0.07]">
           {[
             ["Age", student.age ?? "—"],
             ["Guardian", student.guardian || "—"],
@@ -72,7 +72,7 @@ export default function StudentDetailPage() {
 
       <div className={cx.card}>
         <div className="px-5 pt-3">
-          <div className="flex gap-1 border-b border-slate-100 dark:border-slate-700 -mx-5 px-5">
+          <div className="flex gap-1 border-b border-slate-100 dark:border-white/[0.07] -mx-5 px-5">
             {[["overview", "Profile"], ["payments", "Payments"]].map(([id_, label]) => (
               <button key={id_} onClick={() => setTab(id_)} className={`px-4 py-3 text-sm font-semibold border-b-2 -mb-px transition-colors ${tab === id_ ? "border-teal text-teal" : "border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:text-slate-300"}`}>
                 {label}
@@ -107,14 +107,14 @@ export default function StudentDetailPage() {
           <>
             {payments.length === 0 ? <EmptyState icon={Icon.CreditCard} title="No payments recorded" /> : (
               <>
-                <div className="sm:hidden divide-y divide-slate-100">
+                <div className="sm:hidden divide-y divide-ink-100 dark:divide-white/[0.05]">
                   {payments.map((p) => (
                     <Link key={p.id} href={`/dashboard/receipt/${p.id}`} className="flex items-center justify-between gap-3 p-4 active:bg-slate-50 dark:active:bg-slate-700/60">
                       <div className="min-w-0">
                         <div className="font-semibold text-slate-800 dark:text-slate-100 truncate">{p.receiptNo}</div>
                         <div className="text-xs text-slate-400 dark:text-slate-500 mt-0.5">{p.type.replace(/_/g, " ")} · {p.date}</div>
                       </div>
-                      <div className="font-bold text-slate-800 dark:text-slate-100 flex-shrink-0">৳{p.amount.toLocaleString()}</div>
+                      <div className="font-display font-semibold text-ink-950 dark:text-white flex-shrink-0">৳{p.amount.toLocaleString()}</div>
                     </Link>
                   ))}
                 </div>
@@ -125,7 +125,7 @@ export default function StudentDetailPage() {
                       {payments.map((p) => (
                         <tr key={p.id} className={cx.tr}>
                           <td className={cx.td + " font-semibold"}>{p.receiptNo}</td>
-                          <td className={cx.td + " font-bold text-slate-800 dark:text-slate-100"}>৳{p.amount.toLocaleString()}</td>
+                          <td className={cx.td + " font-display font-semibold text-ink-950 dark:text-white"}>৳{p.amount.toLocaleString()}</td>
                           <td className={cx.td}>{p.type.replace(/_/g, " ")}</td>
                           <td className={cx.td + " text-slate-400 dark:text-slate-500"}>{p.date}</td>
                           <td className={cx.td}><Link href={`/dashboard/receipt/${p.id}`} className={cx.link}>View Receipt →</Link></td>

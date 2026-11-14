@@ -63,6 +63,8 @@ src/
                          Previous/Next Pager above the footer (driven by NAV order; the last page links to /admission), footer, mobile CTA bar,
                          PageHero, Section, SectionHead, CtaBand, `dark` class tokens. ALL public pages use the dark look.
     site/*Content.js     Home/Programs/Why/Branches/Faq page bodies + PortalPreview (client components)
+    BranchDrawer.js      Animated slide-over (right) listing a branch's students + coaches: enter/exit transitions, staggered rows
+                         (`animate-itemIn`), program filter + search, ESC/backdrop close, body scroll lock. Used on dashboard/branches.
     Icons.js, PWARegister.js
   lib/fees.js            PROGRAM_FEES (Beginner 2000 / Intermediate 2500 / Advanced 3000) + balanceHistory() (≤12 months, paid/partial/due
                          by matching monthly_fee payments to "Month YYYY" labels)
@@ -288,6 +290,11 @@ to reset it, re-run `db:bootstrap-admin` with a new password).
 
 ## Changelog
 <!-- Newest first. Format: YYYY-MM-DD — what changed — files touched -->
+- **2026-11-14** — Branches: clicking a branch card (or Enter/Space) opens an animated drawer with that branch's students. It shows totals,
+  an animated program split bar, coaches, search, program filter and a staggered list; each row links to the student profile. Member data is
+  prefetched when the page loads, so the drawer is instant. Card actions stop propagation. Deactivate/Delete now use ConfirmDialog
+  (removed window.confirm; deactivation now asks first). New `itemIn` keyframe. Files: components/BranchDrawer.js,
+  dashboard/branches/page.js, tailwind.config.js.
 - **2026-11-14** — **RBAC.** New `src/lib/rbac.js` (29 permissions, 4 roles, route→permission map, `can()`, `canAccessPath()`). Every API
   route now uses `requirePermission` (removed isStaff/isAdmin/requireContext). Menu, page guard ("No access" screen + header label) and buttons
   use the same matrix. New admin page **Roles & Access** (/dashboard/roles). The security test gained a full matrix check (136 cells, all pass).

@@ -57,6 +57,7 @@ module.exports = {
         shimmer: { "0%": { backgroundPosition: "-400px 0" }, "100%": { backgroundPosition: "400px 0" } },
         glide: { "0%": { strokeDashoffset: "0" }, "100%": { strokeDashoffset: "-1000" } },
         rise: { from: { opacity: 0, transform: "translateY(24px)" }, to: { opacity: 1, transform: "translateY(0)" } },
+        itemIn: { from: { opacity: 0, transform: "translateX(18px)" }, to: { opacity: 1, transform: "translateX(0)" } },
       },
       animation: {
         fadeIn: "fadeIn 0.15s ease-out",
@@ -65,6 +66,7 @@ module.exports = {
         slideInLeft: "slideInLeft 0.25s cubic-bezier(0.16,1,0.3,1)",
         glide: "glide 14s linear infinite",
         rise: "rise 0.7s cubic-bezier(0.16,1,0.3,1) both",
+        itemIn: "itemIn 0.45s cubic-bezier(0.16,1,0.3,1) both",
       },
     },
   },

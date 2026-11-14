@@ -10,7 +10,7 @@ import { Badge, PageLoading, EmptyState, Avatar, ConfirmDialog, Toast, cx } from
 import { ResetPasswordModal } from "@/components/AccountActions";
 import AttendanceGrid from "@/components/AttendanceGrid";
 
-const PROGRAM_TONE = { Beginner: "brand", Intermediate: "gold", Advanced: "red" };
+const PROGRAM_TONE = { Beginner: "brand", Intermediate: "lime", Advanced: "slate" };
 const fmtDate = (d) => (d ? new Date(d).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" }) : "—");
 const taka = (n) => `৳${Number(n || 0).toLocaleString("en-IN")}`;
 const title = (s) => (s ? s.charAt(0) + s.slice(1).toLowerCase() : s);
@@ -65,7 +65,7 @@ export default function StudentDetailPage() {
       {/* Hero */}
       <section className="relative overflow-hidden rounded-3xl bg-ink-950 text-white">
         <div className="absolute inset-0 grain" />
-        <div className="absolute -top-28 -right-20 w-96 h-96 bg-[radial-gradient(closest-side,rgba(10,159,196,0.35),transparent)]" />
+        <div className="absolute -top-28 -right-20 w-96 h-96 bg-[radial-gradient(closest-side,rgba(47,107,224,0.35),transparent)]" />
         <div className="relative p-6 sm:p-8 flex flex-col lg:flex-row lg:items-center gap-6">
           <div className="flex items-center gap-5 flex-1 min-w-0">
             <Avatar name={student.name} initials={student.avatar} src={student.photo} size={88} className="!rounded-3xl ring-4 ring-white/10" />

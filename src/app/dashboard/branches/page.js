@@ -63,7 +63,7 @@ export default function BranchesPage() {
       {clubs.length > 0 && (
         <div className="grid grid-cols-3 gap-3 sm:gap-4">
           <StatCard icon={Icon.Building} label="Active branches" value={clubs.filter((c) => c.status === "active").length} hint={`${clubs.length} total`} tone="brand" />
-          <StatCard icon={Icon.Users} label="Students" value={clubs.reduce((s, c) => s + c.studentCount, 0)} tone="gold" />
+          <StatCard icon={Icon.Users} label="Students" value={clubs.reduce((s, c) => s + c.studentCount, 0)} tone="lime" />
           <StatCard icon={Icon.Shield} label="Instructors" value={clubs.reduce((s, c) => s + c.instructorCount, 0)} tone="slate" />
         </div>
       )}

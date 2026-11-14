@@ -21,16 +21,16 @@ h1, h2, h3, .font-display {
 }
 
 ::selection {
-  background: rgba(10, 159, 196, 0.22);
+  background: rgba(212, 255, 36, 0.45);
 }
 
 /* Slim, quiet scrollbars */
 ::-webkit-scrollbar { width: 8px; height: 8px; }
 ::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { background: #D9DDEA; border-radius: 8px; }
-::-webkit-scrollbar-thumb:hover { background: #B6BDD2; }
-.dark ::-webkit-scrollbar-thumb { background: #252B40; }
-.dark ::-webkit-scrollbar-thumb:hover { background: #3A425C; }
+::-webkit-scrollbar-thumb { background: #D8DAE0; border-radius: 8px; }
+::-webkit-scrollbar-thumb:hover { background: #B4B8C2; }
+.dark ::-webkit-scrollbar-thumb { background: #171A22; }
+.dark ::-webkit-scrollbar-thumb:hover { background: #262A35; }
 
 input, select, textarea, button {
   font-family: inherit;
@@ -38,7 +38,7 @@ input, select, textarea, button {
 
 /* Visible keyboard focus everywhere, invisible for mouse users */
 :focus-visible {
-  outline: 2px solid #22BCE0;
+  outline: 2px solid #1558C9;
   outline-offset: 2px;
 }
 :focus:not(:focus-visible) {

@@ -72,8 +72,8 @@ function MenuList({ pathname, role, onNavigate, variant }) {
     return (
       <Link key={item.href} href={item.href} onClick={onNavigate}
         className={`group relative flex items-center gap-3 px-3 py-2 rounded-lg text-[13.5px] font-medium mb-0.5 transition-all duration-150 ${active ? "bg-white/[0.07] text-white shadow-inner-hair" : "text-ink-400 hover:bg-white/[0.04] hover:text-ink-100"}`}>
-        {active && <span className="absolute -left-3 top-1/2 -translate-y-1/2 w-[3px] h-5 rounded-r-full bg-brand-400 shadow-glow-teal" />}
-        <item.icon width={17} height={17} className={active ? "text-brand-300" : "text-ink-500 group-hover:text-ink-300"} />
+        {active && <span className="absolute -left-3 top-1/2 -translate-y-1/2 w-[3px] h-5 rounded-r-full bg-lime-400 shadow-glow-lime" />}
+        <item.icon width={17} height={17} className={active ? "text-lime-400" : "text-ink-500 group-hover:text-ink-300"} />
         {item.label}
       </Link>
     );

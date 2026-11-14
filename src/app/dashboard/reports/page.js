@@ -7,9 +7,9 @@ import { PageLoading, PageHeader, StatCard, EmptyState, cx } from "@/components/
 
 const taka = (n) => `৳${Number(n || 0).toLocaleString("en-IN")}`;
 const METHOD_LABEL = { cash: "Cash", bkash: "bKash", nagad: "Nagad", rocket: "Rocket", bank_transfer: "Bank transfer" };
-const METHOD_COLOR = { cash: "#0A9FC4", bkash: "#E2136E", nagad: "#F7941D", rocket: "#8C3494", bank_transfer: "#66708E" };
+const METHOD_COLOR = { cash: "#1558C9", bkash: "#E2136E", nagad: "#F7941D", rocket: "#8C3494", bank_transfer: "#66708E" };
 const TYPE_LABEL = { monthly_fee: "Monthly fees", admission_fee: "Admission fees", equipment: "Equipment", event_fee: "Events" };
-const PROGRAM_COLOR = { Beginner: "bg-brand-500", Intermediate: "bg-gold-400", Advanced: "bg-red-500" };
+const PROGRAM_COLOR = { Beginner: "bg-brand-600", Intermediate: "bg-lime-400", Advanced: "bg-ink-900 dark:bg-ink-300" };
 
 export default function ReportsPage() {
   const [students, setStudents] = useState(null);
@@ -65,7 +65,7 @@ export default function ReportsPage() {
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
         <StatCard icon={Icon.Wallet} label={`Revenue · ${range} months`} value={taka(data.total)} hint={`${data.count} payments`} tone="emerald" />
         <StatCard icon={Icon.CreditCard} label="Average payment" value={taka(data.avg)} tone="brand" />
-        <StatCard icon={Icon.TrendingUp} label="Collected this month" value={`${data.collection}%`} hint="of active students" tone="gold" />
+        <StatCard icon={Icon.TrendingUp} label="Collected this month" value={`${data.collection}%`} hint="of active students" tone="lime" />
         <StatCard icon={Icon.Users} label="Active students" value={data.active.length} hint={`${students.length - data.active.length} inactive`} tone="slate" />
       </div>
 
@@ -104,7 +104,7 @@ export default function ReportsPage() {
 
       <div className="grid lg:grid-cols-2 gap-4">
         <Breakdown title="By payment method" rows={data.byMethod.map(([k, v]) => ({ label: METHOD_LABEL[k] || k, value: v, color: METHOD_COLOR[k] }))} total={data.total} />
-        <Breakdown title="By fee type" rows={data.byType.map(([k, v], i) => ({ label: TYPE_LABEL[k] || k, value: v, color: ["#0A9FC4", "#EDBE57", "#3A425C", "#22BCE0"][i % 4] }))} total={data.total} />
+        <Breakdown title="By fee type" rows={data.byType.map(([k, v], i) => ({ label: TYPE_LABEL[k] || k, value: v, color: ["#1558C9", "#D4FF24", "#262A35", "#8EB4F7"][i % 4] }))} total={data.total} />
       </div>
 
       <div className="grid lg:grid-cols-2 gap-4">

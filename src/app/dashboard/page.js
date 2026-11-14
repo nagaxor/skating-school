@@ -85,7 +85,7 @@ function StaffView({ data }) {
         <StatCard icon={Icon.Users} label="Active students" value={active.length} hint={`${students.length - active.length} inactive`} tone="brand" />
         <StatCard icon={Icon.Wallet} label="Revenue this month" value={taka(monthRevenue)} tone="emerald"
           trend={delta === null ? null : { up: delta >= 0, label: `${Math.abs(delta)}%` }} hint={delta === null ? "No data last month" : "vs last month"} />
-        <StatCard icon={Icon.TrendingUp} label="Fees collected" value={`${pct}%`} hint={`${paid} of ${active.length} paid`} tone="gold" />
+        <StatCard icon={Icon.TrendingUp} label="Fees collected" value={`${pct}%`} hint={`${paid} of ${active.length} paid`} tone="lime" />
         <StatCard icon={Icon.Bell} label="Urgent notices" value={urgent} hint={`${notices.length} total`} tone={urgent ? "red" : "slate"} />
       </div>
 
@@ -114,10 +114,10 @@ function StudentView({ data }) {
     <>
       <div className="relative overflow-hidden rounded-3xl bg-ink-950 text-white p-6 sm:p-8">
         <div className="absolute inset-0 grain" />
-        <div className="absolute -top-24 -right-24 w-80 h-80 bg-[radial-gradient(closest-side,rgba(10,159,196,0.35),transparent)]" />
+        <div className="absolute -top-24 -right-24 w-80 h-80 bg-[radial-gradient(closest-side,rgba(47,107,224,0.35),transparent)]" />
         <div className="relative flex flex-wrap items-center justify-between gap-6">
           <div>
-            <div className="text-[12px] font-semibold uppercase tracking-[0.14em] text-brand-300">Next class</div>
+            <div className="text-[12px] font-semibold uppercase tracking-[0.14em] text-lime-400">Next class</div>
             <div className="font-display text-2xl sm:text-3xl font-semibold mt-2">{next ? `${next.day} · ${next.time}` : "No class scheduled"}</div>
             <div className="text-ink-400 text-sm mt-1.5">{next ? `${next.program} with ${next.instructor} · ${next.club}` : "Your branch hasn't published a schedule yet."}</div>
           </div>
@@ -128,7 +128,7 @@ function StudentView({ data }) {
       </div>
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
-        <StatCard icon={Icon.Award} label="My program" value={me?.program || "—"} hint={me?.club || "No branch"} tone="gold" />
+        <StatCard icon={Icon.Award} label="My program" value={me?.program || "—"} hint={me?.club || "No branch"} tone="lime" />
         <StatCard icon={Icon.Check} label="Attendance this month" value={rate === null ? "—" : `${rate}%`} hint={`${present} of ${attendance.length} classes`} tone="emerald" />
         <StatCard icon={Icon.CreditCard} label="Total paid" value={taka(totalPaid)} hint={`${payments.length} receipts`} tone="brand" />
         <StatCard icon={Icon.Bell} label="Notices" value={notices.length} hint={`${notices.filter((n) => n.urgent).length} urgent`} tone="slate" />
@@ -211,7 +211,7 @@ function FeeRing({ paid, total, pct, monthLabel }) {
           <circle cx="66" cy="66" r={r} fill="none" strokeWidth="12" className="stroke-ink-100 dark:stroke-white/10" />
           {pct > 0 && <circle cx="66" cy="66" r={r} fill="none" strokeWidth="12" strokeLinecap="round" stroke="url(#ring)" strokeDasharray={`${(pct / 100) * c} ${c}`} className="transition-all duration-700" />}
           <defs>
-            <linearGradient id="ring" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stopColor="#22BCE0" /><stop offset="1" stopColor="#EDBE57" /></linearGradient>
+            <linearGradient id="ring" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stopColor="#1558C9" /><stop offset="1" stopColor="#D4FF24" /></linearGradient>
           </defs>
         </svg>
         <div>

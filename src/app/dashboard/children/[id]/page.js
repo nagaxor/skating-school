@@ -47,7 +47,7 @@ export default function ChildPage() {
 
       <section className="relative overflow-hidden rounded-3xl bg-ink-950 text-white">
         <div className="absolute inset-0 grain" />
-        <div className="absolute -top-28 -right-20 w-96 h-96 bg-[radial-gradient(closest-side,rgba(10,159,196,0.35),transparent)]" />
+        <div className="absolute -top-28 -right-20 w-96 h-96 bg-[radial-gradient(closest-side,rgba(47,107,224,0.35),transparent)]" />
         <div className="relative p-6 sm:p-8 flex flex-col sm:flex-row sm:items-center gap-5">
           <Avatar name={k.name} initials={k.avatar} src={k.photo} size={84} className="!rounded-3xl ring-4 ring-white/10" />
           <div className="flex-1 min-w-0">

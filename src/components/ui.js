@@ -13,6 +13,7 @@ const TONES = {
   slate: "bg-ink-100 text-ink-600 ring-ink-900/5 dark:bg-white/5 dark:text-ink-300 dark:ring-white/10",
   teal: "bg-brand-500/10 text-brand-700 ring-brand-600/15 dark:text-brand-300 dark:ring-brand-400/20",
   brand: "bg-brand-500/10 text-brand-700 ring-brand-600/15 dark:text-brand-300 dark:ring-brand-400/20",
+  lime: "bg-lime-400/25 text-lime-800 ring-lime-600/25 dark:bg-lime-400/10 dark:text-lime-300 dark:ring-lime-400/25",
 };
 
 export function Badge({ children, tone = "slate", dot = false }) {
@@ -26,7 +27,7 @@ export function Badge({ children, tone = "slate", dot = false }) {
 
 const AVATAR_TONES = [
   "from-brand-500 to-brand-300",
-  "from-gold-500 to-gold-300",
+  "from-lime-500 to-lime-300",
   "from-ink-700 to-ink-500",
   "from-emerald-600 to-emerald-400",
   "from-brand-700 to-brand-500",
@@ -39,7 +40,7 @@ export function Avatar({ name = "", initials, src, size = 36, className = "" }) 
   // eslint-disable-next-line @next/next/no-img-element -- data: URL photos, nothing for next/image to optimise
   if (src) return <img src={src} alt="" style={style} className={`rounded-xl object-cover flex-shrink-0 ring-1 ring-black/5 ${className}`} />;
   return (
-    <span style={style} className={`inline-flex items-center justify-center rounded-xl bg-gradient-to-br ${tone} text-white font-semibold flex-shrink-0 shadow-inner-hair ${className}`}>
+    <span style={style} className={`inline-flex items-center justify-center rounded-xl bg-gradient-to-br ${tone} ${tone.includes("lime") ? "text-ink-950" : "text-white"} font-semibold flex-shrink-0 shadow-inner-hair ${className}`}>
       {text}
     </span>
   );
@@ -96,6 +97,7 @@ const STAT_ACCENTS = {
   emerald: "text-emerald-600 bg-emerald-500/10 dark:text-emerald-300",
   amber: "text-gold-600 bg-gold-400/15 dark:text-gold-300",
   gold: "text-gold-600 bg-gold-400/15 dark:text-gold-300",
+  lime: "text-lime-800 bg-lime-400/30 dark:text-lime-300 dark:bg-lime-400/10",
   navy: "text-ink-700 bg-ink-100 dark:text-ink-200 dark:bg-white/5",
   red: "text-red-600 bg-red-500/10 dark:text-red-300",
   slate: "text-ink-500 bg-ink-100 dark:text-ink-300 dark:bg-white/5",
@@ -227,7 +229,7 @@ export const cx = {
   cardHeader: "px-5 py-4 border-b border-ink-100 dark:border-white/[0.06] flex items-center justify-between gap-3 flex-wrap",
   cardTitle: "font-display font-semibold text-[15px] text-ink-950 dark:text-white",
   btnPrimary: "inline-flex items-center justify-center gap-2 bg-ink-950 text-white dark:bg-white dark:text-ink-950 font-semibold text-sm px-4 py-2.5 rounded-xl shadow-sm hover:bg-ink-800 dark:hover:bg-ink-100 active:scale-[0.98] transition-all duration-150 disabled:opacity-50 disabled:pointer-events-none",
-  btnBrand: "inline-flex items-center justify-center gap-2 bg-brand-600 text-white font-semibold text-sm px-4 py-2.5 rounded-xl shadow-sm hover:bg-brand-700 hover:shadow-glow-teal active:scale-[0.98] transition-all duration-150 disabled:opacity-50 disabled:pointer-events-none",
+  btnBrand: "inline-flex items-center justify-center gap-2 bg-lime-400 text-ink-950 font-semibold text-sm px-4 py-2.5 rounded-xl shadow-sm hover:bg-lime-300 hover:shadow-glow-lime active:scale-[0.98] transition-all duration-150 disabled:opacity-50 disabled:pointer-events-none",
   btnSecondary: "inline-flex items-center justify-center gap-2 bg-white dark:bg-white/5 ring-1 ring-ink-900/10 dark:ring-white/10 text-ink-800 dark:text-ink-100 font-semibold text-sm px-4 py-2.5 rounded-xl hover:bg-ink-50 dark:hover:bg-white/10 active:scale-[0.98] transition-all duration-150 disabled:opacity-50 disabled:pointer-events-none",
   btnDanger: "inline-flex items-center justify-center gap-2 bg-red-600 text-white font-semibold text-sm px-4 py-2.5 rounded-xl hover:bg-red-700 active:scale-[0.98] transition-all duration-150 disabled:opacity-50 disabled:pointer-events-none",
   btnDangerGhost: "inline-flex items-center gap-1.5 text-xs font-semibold text-red-600 dark:text-red-400 hover:bg-red-500/10 px-2.5 py-1.5 rounded-lg transition-all duration-150",

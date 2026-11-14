@@ -67,11 +67,11 @@ export default function ProfilePage() {
       <div className="grid lg:grid-cols-[1fr_1.15fr] gap-5 items-start">
         <div className="space-y-5">
           <div className={cx.card + " overflow-hidden"}>
-            <div className="h-20 bg-ink-950 relative"><div className="absolute inset-0 grain" /><div className="absolute -right-10 -top-16 w-56 h-56 bg-[radial-gradient(closest-side,rgba(10,159,196,0.4),transparent)]" /></div>
+            <div className="h-20 bg-ink-950 relative"><div className="absolute inset-0 grain" /><div className="absolute -right-10 -top-16 w-56 h-56 bg-[radial-gradient(closest-side,rgba(47,107,224,0.4),transparent)]" /></div>
             <div className="px-6 pb-6 -mt-9">
               <Avatar name={user.name} initials={user.avatar} size={72} className="ring-4 ring-white dark:ring-ink-900 !rounded-2xl" />
               <h3 className="font-display text-xl font-semibold text-ink-950 dark:text-white mt-3">{user.name}</h3>
-              <div className="mt-1.5"><Badge tone={user.role === "admin" ? "gold" : "brand"}>{{ admin: "Administrator", instructor: "Instructor", student: "Student", guardian: "Guardian" }[user.role]}</Badge></div>
+              <div className="mt-1.5"><Badge tone={user.role === "admin" ? "lime" : "brand"}>{{ admin: "Administrator", instructor: "Instructor", student: "Student", guardian: "Guardian" }[user.role]}</Badge></div>
               <dl className="grid grid-cols-2 gap-x-4 gap-y-4 mt-6">
                 {[["Email", user.email], ["Phone", user.phone || "—"], ["Branch", user.club || "—"], ["Last sign-in", lastLogin]].map(([l, v]) => (
                   <div key={l} className="min-w-0">

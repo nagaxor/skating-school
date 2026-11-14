@@ -299,11 +299,11 @@ export default function AdmissionPage() {
       <aside className="hidden lg:flex flex-col justify-between sticky top-0 h-screen bg-ink-950 text-white p-10 overflow-hidden">
         <RinkLines className="absolute inset-0 w-full h-full opacity-30" />
         <div className="absolute inset-0 grain" />
-        <div className="absolute -bottom-32 -left-24 w-[460px] h-[420px] bg-[radial-gradient(closest-side,rgba(10,159,196,0.28),transparent)]" />
+        <div className="absolute -bottom-32 -left-24 w-[460px] h-[420px] bg-[radial-gradient(closest-side,rgba(47,107,224,0.28),transparent)]" />
         <Link href="/" className="relative" aria-label="Home"><Logo size={36} /></Link>
 
         <div className="relative">
-          <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-brand-300">Admission {CURRENT_YEAR}</p>
+          <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-lime-400">Admission {CURRENT_YEAR}</p>
           <h1 className="font-display text-[32px] leading-[1.1] font-semibold tracking-[-0.025em] mt-3">
             Join the rink.<br /><span className="text-ink-400">It takes about five minutes.</span>
           </h1>
@@ -315,7 +315,7 @@ export default function AdmissionPage() {
                   <button type="button" disabled={i > step} onClick={() => i < step && setStep(i)}
                     className={`w-full flex items-center gap-4 rounded-xl px-2 py-2.5 text-left transition ${done ? "hover:bg-white/[0.04]" : ""} disabled:cursor-default`}>
                     <span className={`w-9 h-9 rounded-full flex items-center justify-center text-[13px] font-semibold flex-shrink-0 transition ${
-                      done ? "bg-brand-500 text-white" : current ? "bg-white text-ink-950 ring-4 ring-white/10" : "ring-1 ring-white/15 text-ink-500"}`}>
+                      done ? "bg-lime-400 text-ink-950" : current ? "bg-white text-ink-950 ring-4 ring-white/10" : "ring-1 ring-white/15 text-ink-500"}`}>
                       {done ? <Icon.Check width={15} height={15} strokeWidth={2.6} /> : i + 1}
                     </span>
                     <span className="min-w-0">
@@ -331,7 +331,7 @@ export default function AdmissionPage() {
 
         <div className="relative rounded-2xl bg-white/[0.05] ring-1 ring-white/10 p-4">
           <div className="flex items-center gap-3">
-            <span className="w-10 h-10 rounded-xl bg-gold-400/15 text-gold-300 flex items-center justify-center"><Icon.Award width={18} height={18} /></span>
+            <span className="w-10 h-10 rounded-xl bg-lime-400/15 text-lime-300 flex items-center justify-center"><Icon.Award width={18} height={18} /></span>
             <div className="min-w-0">
               <div className="text-[14px] font-semibold">{form.program} program</div>
               <div className="text-[12px] text-ink-400 truncate">{program?.sub}{branch ? ` · ${branch.name}` : ""}</div>
@@ -452,7 +452,7 @@ export default function AdmissionPage() {
               {step === 2 && ["father", "mother"].map((who) => (
                 <div key={who} className="rounded-2xl ring-1 ring-ink-900/[0.08] p-5 sm:p-6 space-y-5">
                   <div className="flex items-center gap-3">
-                    <span className="w-9 h-9 rounded-xl bg-ink-950 text-brand-300 flex items-center justify-center"><Icon.User width={16} height={16} /></span>
+                    <span className="w-9 h-9 rounded-xl bg-ink-950 text-lime-400 flex items-center justify-center"><Icon.User width={16} height={16} /></span>
                     <h3 className="font-display font-semibold text-[17px] text-ink-950 capitalize">{who}</h3>
                   </div>
                   <Field error={err(`${who}Name`)} showError={show(`${who}Name`)} label="Full name" required>
@@ -513,7 +513,7 @@ export default function AdmissionPage() {
                 <>
                   <div className="rounded-2xl bg-ink-950 text-white p-5 sm:p-6 relative overflow-hidden">
                     <div className="absolute inset-0 grain" />
-                    <div className="absolute -top-20 -right-16 w-60 h-60 bg-[radial-gradient(closest-side,rgba(10,159,196,0.35),transparent)]" />
+                    <div className="absolute -top-20 -right-16 w-60 h-60 bg-[radial-gradient(closest-side,rgba(47,107,224,0.35),transparent)]" />
                     <div className="relative flex items-center gap-4">
                       <PhotoThumb photo={photo} size="w-16 h-16" />
                       <div className="min-w-0">
@@ -573,7 +573,7 @@ export default function AdmissionPage() {
               </button>
             ) : (
               <button type="submit" disabled={!formValid || submitting}
-                className="flex-1 sm:flex-none sm:ml-auto sm:min-w-[240px] h-12 inline-flex items-center justify-center gap-2 bg-brand-600 text-white font-semibold rounded-xl hover:bg-brand-700 hover:shadow-glow-teal active:scale-[0.99] transition disabled:opacity-50">
+                className="flex-1 sm:flex-none sm:ml-auto sm:min-w-[240px] h-12 inline-flex items-center justify-center gap-2 bg-lime-400 text-ink-950 font-semibold rounded-xl hover:bg-lime-300 hover:shadow-glow-lime active:scale-[0.99] transition disabled:opacity-50">
                 {submitting ? <><span className="w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin" /> Submitting…</> : <>Submit admission <Icon.Check width={16} height={16} /></>}
               </button>
             )}

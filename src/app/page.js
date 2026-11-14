@@ -61,7 +61,7 @@ export default function HomePage() {
           </div>
           <div className="flex items-center gap-2">
             <Link href="/login" className="text-[13.5px] font-semibold text-ink-200 hover:text-white px-3.5 py-2 rounded-lg hover:bg-white/5 transition">Sign in</Link>
-            <Link href="/admission" className="hidden sm:inline-flex items-center gap-1.5 text-[13.5px] font-semibold bg-white text-ink-950 px-4 py-2 rounded-lg hover:bg-brand-50 transition">
+            <Link href="/admission" className="hidden sm:inline-flex items-center gap-1.5 text-[13.5px] font-semibold bg-lime-400 text-ink-950 px-4 py-2 rounded-lg hover:bg-lime-300 transition">
               Apply now <Icon.ArrowRight width={14} height={14} />
             </Link>
           </div>
@@ -73,24 +73,24 @@ export default function HomePage() {
         <div className="absolute inset-0 hairline-grid [mask-image:radial-gradient(ellipse_at_center,black_30%,transparent_75%)]" />
         <RinkLines className="absolute inset-0 w-full h-full opacity-90" />
         <div className="absolute inset-0 grain" />
-        <div className="absolute -top-40 left-1/2 -translate-x-1/2 w-[900px] h-[500px] bg-[radial-gradient(closest-side,rgba(10,159,196,0.28),transparent)]" />
+        <div className="absolute -top-40 left-1/2 -translate-x-1/2 w-[900px] h-[500px] bg-[radial-gradient(closest-side,rgba(47,107,224,0.28),transparent)]" />
         <div className="absolute bottom-0 inset-x-0 h-40 bg-gradient-to-b from-transparent to-ink-950" />
 
         <div className="relative max-w-7xl mx-auto px-5 sm:px-8 pt-32 sm:pt-40 pb-20 sm:pb-28 grid lg:grid-cols-[1.15fr_0.85fr] gap-14 items-center">
           <div>
             <div className="animate-rise inline-flex items-center gap-2 rounded-full bg-white/[0.06] ring-1 ring-white/10 pl-1.5 pr-3.5 py-1.5 text-[12px] font-medium text-ink-200 mb-7">
-              <span className="rounded-full bg-gold-400 text-ink-950 text-[10.5px] font-bold px-2 py-0.5">2026</span>
+              <span className="rounded-full bg-lime-400 text-ink-950 text-[10.5px] font-bold px-2 py-0.5">2026</span>
               Admissions are open for all ages
             </div>
             <h1 className="animate-rise [animation-delay:80ms] font-display text-[2.6rem] leading-[1.04] sm:text-6xl lg:text-[4.4rem] font-semibold tracking-[-0.035em] text-balance">
               Where young champions{" "}
-              <span className="bg-gradient-to-r from-brand-300 via-brand-200 to-gold-300 bg-clip-text text-transparent">learn to glide.</span>
+              <span className="bg-gradient-to-r text-lime-400">learn to glide.</span>
             </h1>
             <p className="animate-rise [animation-delay:160ms] mt-6 text-[17px] sm:text-lg text-ink-300 max-w-xl leading-relaxed">
               Bangladesh&apos;s leading roller skating school. Professional coaching for ages 3 and up, across Dhaka&apos;s top skating venues.
             </p>
             <div className="animate-rise [animation-delay:240ms] mt-9 flex flex-wrap gap-3">
-              <Link href="/admission" className="group inline-flex items-center gap-2 bg-brand-500 hover:bg-brand-400 text-white font-semibold px-6 py-3.5 rounded-xl shadow-glow-teal transition">
+              <Link href="/admission" className="group inline-flex items-center gap-2 bg-lime-400 hover:bg-lime-300 text-ink-950 font-semibold px-6 py-3.5 rounded-xl shadow-glow-lime transition">
                 Start admission <Icon.ArrowRight width={16} height={16} className="transition-transform group-hover:translate-x-0.5" />
               </Link>
               <a href="#programs" className="inline-flex items-center gap-2 bg-white/[0.06] hover:bg-white/[0.1] ring-1 ring-white/10 text-white font-semibold px-6 py-3.5 rounded-xl transition">
@@ -106,7 +106,7 @@ export default function HomePage() {
 
           {/* Product preview card */}
           <div className="animate-rise [animation-delay:200ms] relative hidden md:block">
-            <div className="absolute -inset-6 bg-[radial-gradient(closest-side,rgba(237,190,87,0.18),transparent)]" />
+            <div className="absolute -inset-6 bg-[radial-gradient(closest-side,rgba(212,255,36,0.18),transparent)]" />
             <div className="relative rounded-3xl bg-white/[0.05] ring-1 ring-white/10 backdrop-blur-xl p-5 shadow-[0_40px_80px_-20px_rgba(0,0,0,0.6)]">
               <div className="flex items-center justify-between mb-4">
                 <span className="text-[11px] font-semibold uppercase tracking-[0.14em] text-ink-400">Parent portal</span>
@@ -122,7 +122,7 @@ export default function HomePage() {
                   <div className="text-[12px] text-ink-400">Attendance</div>
                   <div className="mt-2 flex items-end gap-1 h-10">
                     {[60, 85, 70, 95, 80, 100, 90].map((h, i) => (
-                      <span key={i} className="flex-1 rounded-sm bg-gradient-to-t from-brand-600 to-brand-300" style={{ height: `${h}%` }} />
+                      <span key={i} className="flex-1 rounded-sm bg-gradient-to-t from-brand-600 to-brand-400" style={{ height: `${h}%` }} />
                     ))}
                   </div>
                 </div>
@@ -134,8 +134,8 @@ export default function HomePage() {
                   <div className="text-[11px] text-ink-500 mt-1.5">Receipt issued</div>
                 </div>
               </div>
-              <div className="mt-3 rounded-2xl bg-gradient-to-r from-gold-400/15 to-transparent ring-1 ring-gold-400/20 p-4 flex items-center gap-3">
-                <span className="w-9 h-9 rounded-xl bg-gold-400/20 text-gold-300 flex items-center justify-center"><Icon.Bell width={16} height={16} /></span>
+              <div className="mt-3 rounded-2xl bg-gradient-to-r from-lime-400/15 to-transparent ring-1 ring-lime-400/25 p-4 flex items-center gap-3">
+                <span className="w-9 h-9 rounded-xl bg-lime-400/20 text-lime-300 flex items-center justify-center"><Icon.Bell width={16} height={16} /></span>
                 <div>
                   <div className="text-[13px] font-semibold">Notice from your coach</div>
                   <div className="text-[12px] text-ink-400">Bring knee guards for Saturday&apos;s session</div>
@@ -173,7 +173,7 @@ export default function HomePage() {
                 {p.featured && <RinkLines animated={false} className="absolute inset-0 w-full h-full rounded-3xl opacity-50" />}
                 <div className="relative flex items-center justify-between">
                   <span className={`text-[12px] font-semibold px-2.5 py-1 rounded-md ${p.featured ? "bg-white/10 text-ink-200" : "bg-ink-50 text-ink-600 ring-1 ring-ink-900/5"}`}>{p.age}</span>
-                  <span className={`w-2.5 h-2.5 rounded-full ${p.tone === "brand" ? "bg-brand-500" : p.tone === "gold" ? "bg-gold-400" : "bg-ink-900"}`} />
+                  <span className={`w-2.5 h-2.5 rounded-full ${p.tone === "brand" ? "bg-brand-500" : p.tone === "gold" ? "bg-lime-400" : "bg-ink-900"}`} />
                 </div>
                 <h3 className="relative font-display text-2xl font-semibold tracking-tight mt-6">{p.title}</h3>
                 <p className={`relative text-[14.5px] leading-relaxed mt-2.5 ${p.featured ? "text-ink-300" : "text-ink-500"}`}>{p.desc}</p>
@@ -207,7 +207,7 @@ export default function HomePage() {
           <div className="mt-14 grid sm:grid-cols-2 lg:grid-cols-3 gap-px bg-ink-900/[0.07] rounded-3xl overflow-hidden ring-1 ring-ink-900/[0.07]">
             {FEATURES.map((f) => (
               <div key={f.title} className="bg-white p-7 sm:p-8 group">
-                <span className="w-11 h-11 rounded-xl bg-ink-950 text-brand-300 flex items-center justify-center shadow-inner-hair transition-transform group-hover:-translate-y-0.5">
+                <span className="w-11 h-11 rounded-xl bg-ink-950 text-lime-400 flex items-center justify-center shadow-inner-hair transition-transform group-hover:-translate-y-0.5">
                   <f.icon width={19} height={19} />
                 </span>
                 <h3 className="font-display text-[17px] font-semibold mt-5">{f.title}</h3>
@@ -319,7 +319,7 @@ export default function HomePage() {
         <a href={WHATSAPP} target="_blank" rel="noopener noreferrer" className="w-12 h-12 flex-shrink-0 rounded-xl bg-white/[0.06] ring-1 ring-white/10 flex items-center justify-center text-emerald-400" aria-label="Chat on WhatsApp">
           <Icon.MessageCircle width={19} height={19} />
         </a>
-        <Link href="/admission" className="flex-1 inline-flex items-center justify-center gap-2 bg-brand-500 text-white font-semibold h-12 rounded-xl active:scale-[0.98] transition">
+        <Link href="/admission" className="flex-1 inline-flex items-center justify-center gap-2 bg-lime-400 text-ink-950 font-semibold h-12 rounded-xl active:scale-[0.98] transition">
           Apply for admission <Icon.ArrowRight width={16} height={16} />
         </Link>
       </div>

@@ -7,8 +7,8 @@ import { Icon } from "@/components/Icons";
 import { Badge, PageLoading, EmptyState, Toast, ModalShell, ConfirmDialog, PageHeader, cx } from "@/components/ui";
 
 const DAY_ORDER = ["Saturday", "Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday"];
-const PROGRAM_TONE = { Beginner: "brand", Intermediate: "gold", Advanced: "red" };
-const PROGRAM_BAR = { Beginner: "bg-brand-500", Intermediate: "bg-gold-400", Advanced: "bg-red-500" };
+const PROGRAM_TONE = { Beginner: "brand", Intermediate: "lime", Advanced: "slate" };
+const PROGRAM_BAR = { Beginner: "bg-brand-600", Intermediate: "bg-lime-400", Advanced: "bg-ink-950 dark:bg-ink-300" };
 const todayName = () => new Date().toLocaleDateString("en-US", { weekday: "long" });
 
 export default function SchedulePage() {

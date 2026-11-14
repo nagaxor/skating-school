@@ -49,11 +49,11 @@ export default function LoginPage() {
       <div className="hidden lg:flex relative overflow-hidden bg-ink-950 text-white flex-col justify-between p-12">
         <RinkLines className="absolute inset-0 w-full h-full" />
         <div className="absolute inset-0 grain" />
-        <div className="absolute -bottom-40 -left-20 w-[600px] h-[500px] bg-[radial-gradient(closest-side,rgba(10,159,196,0.25),transparent)]" />
+        <div className="absolute -bottom-40 -left-20 w-[600px] h-[500px] bg-[radial-gradient(closest-side,rgba(47,107,224,0.25),transparent)]" />
         <Link href="/" className="relative" aria-label="Home"><Logo size={36} /></Link>
         <div className="relative max-w-md">
           <h1 className="font-display text-[2.6rem] leading-[1.08] font-semibold tracking-[-0.03em] text-balance">
-            Run every rink, roster and receipt <span className="text-brand-300">from one place.</span>
+            Run every rink, roster and receipt <span className="text-lime-400">from one place.</span>
           </h1>
           <p className="text-ink-400 text-[15.5px] leading-relaxed mt-5">Attendance, fees, schedules and staff across all Online Skating School branches, secured by role.</p>
           <div className="mt-10 grid grid-cols-3 gap-3">
@@ -63,7 +63,7 @@ export default function LoginPage() {
               { icon: Icon.FileText, t: "Digital receipts" },
             ].map((f) => (
               <div key={f.t} className="rounded-2xl bg-white/[0.04] ring-1 ring-white/[0.08] p-4">
-                <f.icon width={17} height={17} className="text-brand-300" />
+                <f.icon width={17} height={17} className="text-lime-400" />
                 <div className="text-[12.5px] font-medium text-ink-200 mt-3 leading-snug">{f.t}</div>
               </div>
             ))}

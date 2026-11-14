@@ -1,14 +1,20 @@
 /** @type {import('tailwindcss').Config} */
 
 // Design tokens. See CLAUDE.md §5 "Design system".
-// brand = ice cyan (accent), ink = cool near-black neutrals, gold = premium highlight.
+// Client palette (2026-11): Midnight Black #030407 · Electric Cobalt Blue #1558C9 · Acid Lime #D4FF24.
+// brand = Electric Cobalt (primary accent), ink = Midnight neutrals, lime = Acid Lime highlight / CTA fill
+// (use lime as a FILL with ink-950 text; lime text only on dark backgrounds). gold = functional warning (dues).
 const brand = {
-  50: "#ECFBFF", 100: "#CFF4FC", 200: "#A2E8F8", 300: "#63D5F0", 400: "#22BCE0",
-  500: "#0A9FC4", 600: "#087FA3", 700: "#0C6684", 800: "#11536B", 900: "#13455A", 950: "#062C3C",
+  50: "#EEF4FF", 100: "#DAE6FD", 200: "#BCD2FB", 300: "#8EB4F7", 400: "#5A8EF0",
+  500: "#2F6BE0", 600: "#1558C9", 700: "#1246A3", 800: "#133C84", 900: "#15356B", 950: "#0F2246",
 };
 const ink = {
-  50: "#F6F7FB", 100: "#ECEEF5", 200: "#D9DDEA", 300: "#B6BDD2", 400: "#8A93AF",
-  500: "#66708E", 600: "#4C5573", 700: "#3A425C", 800: "#252B40", 900: "#161B2C", 950: "#0B0F1C",
+  50: "#F6F7F9", 100: "#ECEDF1", 200: "#D8DAE0", 300: "#B4B8C2", 400: "#858B98",
+  500: "#5A606E", 600: "#3B404D", 700: "#262A35", 800: "#171A22", 900: "#0B0D12", 950: "#030407",
+};
+const lime = {
+  50: "#FAFFE5", 100: "#F3FFC2", 200: "#EAFF8A", 300: "#DFFF52", 400: "#D4FF24",
+  500: "#B9E600", 600: "#92B500", 700: "#6E8900", 800: "#556A04", 900: "#47580A",
 };
 const gold = { 200: "#F8E7BC", 300: "#F5D58A", 400: "#EDBE57", 500: "#D9A23A", 600: "#B7832A" };
 
@@ -21,6 +27,7 @@ module.exports = {
         brand,
         ink,
         gold,
+        lime,
         // Legacy aliases so older class names keep matching the new palette.
         // slate-* is used throughout the pages; mapping it to ink makes every
         // neutral in the app pick up the new cool, premium greys.
@@ -34,10 +41,11 @@ module.exports = {
         display: ["var(--font-sora)", "var(--font-inter)", "system-ui", "sans-serif"],
       },
       boxShadow: {
-        card: "0 1px 2px rgba(11,15,28,0.04), 0 0 0 1px rgba(11,15,28,0.05)",
-        lift: "0 1px 2px rgba(11,15,28,0.05), 0 8px 24px -8px rgba(11,15,28,0.12), 0 0 0 1px rgba(11,15,28,0.05)",
-        popover: "0 24px 48px -12px rgba(11,15,28,0.35), 0 0 0 1px rgba(11,15,28,0.06)",
-        "glow-teal": "0 10px 30px -8px rgba(10,159,196,0.55)",
+        card: "0 1px 2px rgba(3,4,7,0.04), 0 0 0 1px rgba(3,4,7,0.05)",
+        lift: "0 1px 2px rgba(3,4,7,0.05), 0 8px 24px -8px rgba(3,4,7,0.12), 0 0 0 1px rgba(3,4,7,0.05)",
+        popover: "0 24px 48px -12px rgba(3,4,7,0.4), 0 0 0 1px rgba(3,4,7,0.06)",
+        "glow-teal": "0 10px 30px -8px rgba(21,88,201,0.6)",
+        "glow-lime": "0 10px 32px -8px rgba(212,255,36,0.55)",
         "glow-gold": "0 10px 30px -8px rgba(237,190,87,0.5)",
         "inner-hair": "inset 0 1px 0 0 rgba(255,255,255,0.06)",
       },

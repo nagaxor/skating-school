@@ -109,7 +109,7 @@ export default function StaffPage() {
         actions={<button onClick={() => setModal({ type: "add" })} className={cx.btnPrimary}><Icon.Plus width={16} height={16} /> Add instructor</button>} />
 
       <div className="grid grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
-        <StatCard icon={Icon.Crown} label="Administrators" value={admins.length} hint={`${activeAdmins} active`} tone="gold" />
+        <StatCard icon={Icon.Crown} label="Administrators" value={admins.length} hint={`${activeAdmins} active`} tone="lime" />
         <StatCard icon={Icon.Shield} label="Instructors" value={instructors.length} hint={`${instructors.filter((i) => i.status === "active").length} active`} tone="brand" />
         <StatCard icon={Icon.MapPin} label="Without a branch" value={instructors.filter((i) => !i.clubId).length} hint="instructors" tone="slate" />
       </div>

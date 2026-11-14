@@ -75,7 +75,7 @@ function ChildCard({ child: k }) {
     <Link href={`/dashboard/children/${k.id}`} className={`${cx.card} group overflow-hidden hover:shadow-lift transition-shadow`}>
       <div className="relative bg-ink-950 text-white p-5 overflow-hidden">
         <div className="absolute inset-0 grain" />
-        <div className="absolute -top-16 -right-10 w-56 h-56 bg-[radial-gradient(closest-side,rgba(10,159,196,0.35),transparent)]" />
+        <div className="absolute -top-16 -right-10 w-56 h-56 bg-[radial-gradient(closest-side,rgba(47,107,224,0.35),transparent)]" />
         <div className="relative flex items-center gap-4">
           <Avatar name={k.name} initials={k.avatar} src={k.photo} size={60} className="!rounded-2xl ring-2 ring-white/10" />
           <div className="flex-1 min-w-0">

@@ -8,7 +8,7 @@ import { downloadCsv } from "@/lib/csv";
 import { Icon } from "@/components/Icons";
 import { Badge, PageLoading, EmptyState, Toast, ModalShell, ConfirmDialog, PageHeader, SearchInput, Avatar, cx } from "@/components/ui";
 
-const PROGRAM_TONE = { Beginner: "brand", Intermediate: "gold", Advanced: "red" };
+const PROGRAM_TONE = { Beginner: "brand", Intermediate: "lime", Advanced: "slate" };
 const PASSWORD_HINT = "At least 8 characters, with a letter and a number";
 const strong = (v) => v.length >= 8 && /[A-Za-z]/.test(v) && /\d/.test(v);
 

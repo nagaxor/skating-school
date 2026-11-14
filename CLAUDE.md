@@ -182,9 +182,17 @@ to reset it, re-run `db:bootstrap-admin` with a new password).
 - Not built yet: online admission does NOT create a guardian account (it still creates a student login). The admin links guardians manually. → backlog
 
 ## 5. Design system (2026-11 redesign)
-- **Look:** a "premium sports club" feel. Deep **ink** neutrals, an **ice-cyan brand** accent, a **gold** highlight for premium and "featured" items.
-  The signature visual is the "rink lines" SVG (concentric track lanes plus a gliding light streak). No emoji logos.
-- **Tokens** (tailwind.config.js): `brand-50…950`, `ink-50…950`, `gold-200…600`. **`slate-*` is aliased to `ink`**, and `teal`/`navy`/`amber`
+- **Client palette (required, 2026-11-14):** **Midnight Black `#030407`** (ink-950), **Electric Cobalt Blue `#1558C9`** (brand-600),
+  **Acid Lime `#D4FF24`** (lime-400). The client's reference was a dark product site with a lime "Buy now" pill and cobalt accents.
+  - Lime is a **fill** (CTA buttons, active-nav bar, highlights, "featured" items) **with ink-950 text**, or lime text on DARK backgrounds only.
+    Lime text on white is unreadable. Lime avatars use dark initials.
+  - Cobalt = links, eyebrows, charts, focus ring, light-mode accents. `gold-*` = functional **warning** only (fees due, Caps Lock, low attendance).
+  - Program colours: Beginner = cobalt, Intermediate = lime, Advanced = ink/slate.
+- **Logo:** the official round badge ("Bangladesh Online Skating School", two inline skaters) belongs at **`public/logo.png`**.
+  `LogoMark` (Brand.js) renders it in a white circle; if the file is missing it falls back to the drawn SVG mark (`DrawnMark`).
+  favicon.svg / icon-*.png / favicon.ico are currently generated from the drawn mark in the client colours. Regenerate them from logo.png once it's added.
+- The signature visual is the "rink lines" SVG (concentric track lanes plus a gliding light streak). No emoji logos.
+- **Tokens** (tailwind.config.js): `brand-50…950` (cobalt), `ink-50…950` (midnight), `lime-50…900`, `gold-200…600`. **`slate-*` is aliased to `ink`**, and `teal`/`navy`/`amber`
   are legacy aliases (→ brand-600 / ink-950 / gold-400), so old class names still render on-palette. Prefer the new names in new code.
 - **Type:** Inter for UI (`font-sans`), **Sora** for headings and big numbers (`font-display`). Headings are semibold with tight tracking.
   Use `tabular` for numbers. ৳ falls back to a system glyph (Sora/Inter lack it); that's expected.
@@ -248,6 +256,11 @@ to reset it, re-run `db:bootstrap-admin` with a new password).
 
 ## Changelog
 <!-- Newest first. Format: YYYY-MM-DD — what changed — files touched -->
+- **2026-11-14** — **Client palette applied:** Midnight Black / Electric Cobalt / Acid Lime. Token scales rewritten (brand = cobalt, ink = midnight,
+  new lime). Hard-coded hex and rgba glows swept. Lime CTAs (landing, admission submit, btnBrand), lime hero headline, lime active-nav bar,
+  lime ring gradients. Program tones changed. Favicon/PWA icons redrawn in the new colours (rendered via headless Chrome; ico built by hand).
+  manifest theme/background → #030407. LogoMark now prefers `/logo.png` (official badge, owner to add) with SVG fallback. Files: tailwind.config.js,
+  globals.css, layout.js, Brand.js, ui.js, DashboardShell.js, most pages, public/{favicon.svg,favicon.ico,icon-*.png,manifest.json}.
 - **2026-11-14** — **Guardian portal + IDOR hardening.** Migration `guardian_portal` (Role.guardian, GuardianLink). New central authz in
   lib/access.js (`isStaff`, `isAdmin`, `studentScope`, `visibleClubIds`). Every API route was refactored from deny-lists to allow-lists and
   scoped reads (students, payments, receipts, attendance, schedules, notices, users/status); out-of-scope records → 404.

@@ -3,16 +3,10 @@
 import Link from "next/link";
 import { Icon } from "@/components/Icons";
 import { RinkLines } from "@/components/Brand";
-import SiteShell, { Section, SectionHead, CtaBand, dark } from "@/components/SiteShell";
+import SiteShell, { CtaBand, dark } from "@/components/SiteShell";
 import PortalPreview from "@/components/site/PortalPreview";
-import { STATS, STEPS } from "@/lib/site-content";
+import { STATS } from "@/lib/site-content";
 
-const EXPLORE = [
-  { href: "/programs", icon: Icon.Award, title: "Programs", text: "Beginner, Intermediate and Advanced. Ages, fees and what each level teaches.", accent: "lime" },
-  { href: "/why-us", icon: Icon.Shield, title: "Why us", text: "Safety-first coaching, a competition pathway and a portal for parents.", accent: "brand" },
-  { href: "/branches", icon: Icon.MapPin, title: "Branches", text: "Uttara, Bashundhara, Aftab Nagar and Gulshan. Find the one nearest you.", accent: "brand" },
-  { href: "/faq", icon: Icon.Info, title: "FAQ", text: "Ages, equipment, course length, payments and the guardian portal.", accent: "lime" },
-];
 
 export default function HomeContent() {
   return (
@@ -42,7 +36,7 @@ export default function HomeContent() {
               <Link href="/programs" className={dark.ctaGhost}>Explore programs</Link>
             </div>
             <div className="animate-rise [animation-delay:320ms] mt-10 flex flex-wrap items-center gap-x-6 gap-y-3 text-[13px] text-ink-400">
-              {["Ages 3 and up", "Safety-first coaching", "Est. 2020"].map((t) => (
+              {["Ages 3 and up", "Safety-first coaching", "4 branches in Dhaka"].map((t) => (
                 <span key={t} className="inline-flex items-center gap-2"><Icon.Check width={14} height={14} className="text-lime-400" />{t}</span>
               ))}
             </div>
@@ -61,35 +55,6 @@ export default function HomeContent() {
           </div>
         </div>
       </section>
-
-      {/* Explore */}
-      <Section>
-        <SectionHead eyebrow="Explore" title="Everything about the school, one tap away." />
-        <div className="mt-12 grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          {EXPLORE.map((e) => (
-            <Link key={e.href} href={e.href} className={`${dark.card} ${dark.cardHover} group p-6 flex flex-col min-h-[230px]`}>
-              <span className={`w-11 h-11 rounded-xl flex items-center justify-center ${e.accent === "lime" ? "bg-lime-400 text-ink-950" : "bg-brand-600 text-white"}`}><e.icon width={19} height={19} /></span>
-              <h3 className="font-display text-xl font-semibold mt-6">{e.title}</h3>
-              <p className="text-[14px] text-ink-400 leading-relaxed mt-2 flex-1">{e.text}</p>
-              <span className="mt-5 inline-flex items-center gap-1.5 text-[13px] font-semibold text-lime-400">Open <Icon.ArrowRight width={14} height={14} className="transition-transform group-hover:translate-x-1" /></span>
-            </Link>
-          ))}
-        </div>
-      </Section>
-
-      {/* Steps */}
-      <Section>
-        <SectionHead eyebrow="Admission" title="From sign-up to first glide in three steps." />
-        <div className="mt-12 grid md:grid-cols-3 gap-4">
-          {STEPS.map((s) => (
-            <div key={s.n} className={`${dark.card} p-7`}>
-              <div className="font-display text-sm font-semibold text-lime-400">{s.n}</div>
-              <h3 className="font-display text-xl font-semibold mt-3">{s.title}</h3>
-              <p className="text-[14.5px] text-ink-400 leading-relaxed mt-2">{s.text}</p>
-            </div>
-          ))}
-        </div>
-      </Section>
 
       <CtaBand />
     </SiteShell>

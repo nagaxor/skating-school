@@ -52,9 +52,22 @@ export const FAQ = [
   { q: "Can parents follow their child's progress?", a: "Yes. Parents get a guardian portal showing each child's attendance, upcoming classes, fee balance and receipts. Several children can be followed from one account." },
 ];
 
+// Order = top menu order = Previous/Next order at the bottom of each page.
 export const NAV = [
-  { href: "/programs", label: "Programs" },
-  { href: "/why-us", label: "Why us" },
-  { href: "/branches", label: "Branches" },
-  { href: "/faq", label: "FAQ" },
+  { href: "/", label: "Home", blurb: "Overview of the school" },
+  { href: "/programs", label: "Programs", blurb: "Levels, ages and monthly fees" },
+  { href: "/why-us", label: "Why us", blurb: "Coaching, safety and the parent portal" },
+  { href: "/branches", label: "Branches", blurb: "Uttara, Bashundhara, Aftab Nagar, Gulshan" },
+  { href: "/how-to-join", label: "How to join", blurb: "Three steps and what to have ready" },
+  { href: "/faq", label: "FAQ", blurb: "Answers to common questions" },
+];
+
+// What the online admission form asks for (keep in sync with /admission).
+export const CHECKLIST = [
+  { title: "A clear photo of the skater", text: "Taken on a phone is fine. It is resized automatically." },
+  { title: "Parents' names, mobile numbers and NID numbers", text: "For both father and mother, with their occupation." },
+  { title: "Date of birth and birth registration number", text: "From the child's birth certificate." },
+  { title: "Present and permanent address", text: "Tick one box if they are the same." },
+  { title: "Current school, blood group and religion", text: "Short answers, no documents to upload." },
+  { title: "A preferred branch and shift", text: "Morning or day. You can ask us if you're unsure." },
 ];

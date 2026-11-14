@@ -25,6 +25,7 @@ export default function SiteShell({ children }) {
     <main className="min-h-screen bg-ink-950 text-white overflow-x-hidden">
       <SiteNav />
       {children}
+      <Pager />
       <SiteFooter />
       <MobileCta />
     </main>
@@ -47,14 +48,14 @@ function SiteNav() {
     <nav className={`fixed top-0 inset-x-0 z-50 transition-all duration-300 ${scrolled || open ? "bg-ink-950/85 backdrop-blur-xl border-b border-white/[0.06]" : "bg-transparent"}`}>
       <div className="max-w-7xl mx-auto px-5 sm:px-8 h-16 sm:h-[72px] flex items-center justify-between gap-4">
         <Link href="/" aria-label="Online Skating School home"><Logo size={34} /></Link>
-        <div className="hidden md:flex items-center gap-1 text-[13.5px] font-medium">
+        <div className="hidden lg:flex items-center gap-0.5 text-[13.5px] font-medium">
           {NAV.map((n) => {
             const active = pathname === n.href;
             return (
               <Link key={n.href} href={n.href} aria-current={active ? "page" : undefined}
-                className={`relative px-3.5 py-2 rounded-lg transition-colors ${active ? "text-white" : "text-ink-400 hover:text-white"}`}>
+                className={`relative px-3 py-2 rounded-lg transition-colors ${active ? "text-white" : "text-ink-300 hover:text-white hover:bg-white/[0.05]"}`}>
                 {n.label}
-                {active && <span className="absolute left-3.5 right-3.5 -bottom-0.5 h-[2px] rounded-full bg-lime-400" />}
+                {active && <span className="absolute left-3 right-3 -bottom-0.5 h-[2px] rounded-full bg-lime-400" />}
               </Link>
             );
           })}
@@ -64,14 +65,14 @@ function SiteNav() {
           <Link href="/admission" className="hidden sm:inline-flex items-center gap-1.5 text-[13.5px] font-semibold bg-lime-400 text-ink-950 px-4 py-2 rounded-lg hover:bg-lime-300 transition">
             Apply now <Icon.ArrowRight width={14} height={14} />
           </Link>
-          <button onClick={() => setOpen((o) => !o)} className="md:hidden w-10 h-10 rounded-xl flex items-center justify-center text-ink-200 hover:bg-white/5" aria-label="Menu" aria-expanded={open}>
+          <button onClick={() => setOpen((o) => !o)} className="lg:hidden w-10 h-10 rounded-xl flex items-center justify-center text-ink-200 hover:bg-white/5" aria-label="Menu" aria-expanded={open}>
             {open ? <Icon.X width={20} height={20} /> : <Icon.Menu width={20} height={20} />}
           </button>
         </div>
       </div>
       {open && (
-        <div className="md:hidden border-t border-white/[0.06] px-5 pb-5 pt-2 animate-slideUp">
-          {[{ href: "/", label: "Home" }, ...NAV, { href: "/login", label: "Sign in" }].map((n) => (
+        <div className="lg:hidden border-t border-white/[0.06] px-5 pb-5 pt-2 animate-slideUp">
+          {[...NAV, { href: "/login", label: "Sign in" }].map((n) => (
             <Link key={n.href} href={n.href} className={`flex items-center justify-between py-3.5 border-b border-white/[0.05] text-[16px] font-medium ${pathname === n.href ? "text-lime-400" : "text-ink-200"}`}>
               {n.label} <Icon.ChevronRight width={16} height={16} className="text-ink-600" />
             </Link>
@@ -136,6 +137,38 @@ export function CtaBand({ title = "Ready to start skating?", text = "Admission i
   );
 }
 
+// Previous / Next page links so no page is a dead end.
+function Pager() {
+  const pathname = usePathname();
+  const i = NAV.findIndex((n) => n.href === pathname);
+  if (i === -1) return null;
+  const prev = NAV[i - 1];
+  const next = NAV[i + 1];
+  return (
+    <nav aria-label="Page navigation" className="px-5 sm:px-8 pb-16">
+      <div className="max-w-7xl mx-auto grid sm:grid-cols-2 gap-4">
+        {prev ? (
+          <Link href={prev.href} className="group rounded-2xl ring-1 ring-white/[0.08] bg-white/[0.02] hover:bg-white/[0.05] hover:ring-white/[0.16] p-5 sm:p-6 flex items-center gap-4 transition">
+            <span className="w-11 h-11 rounded-xl bg-white/[0.06] flex items-center justify-center flex-shrink-0 transition-transform group-hover:-translate-x-0.5"><Icon.ArrowLeft width={18} height={18} /></span>
+            <span className="min-w-0"><span className="block text-[12px] font-semibold uppercase tracking-[0.12em] text-ink-400">Previous</span><span className="block font-display text-lg font-semibold">{prev.label}</span><span className="block text-[13px] text-ink-400 truncate">{prev.blurb}</span></span>
+          </Link>
+        ) : null}
+        {next ? (
+          <Link href={next.href} className={`${prev ? "" : "sm:col-span-2 "}group rounded-2xl ring-1 ring-lime-400/30 bg-lime-400/[0.06] hover:bg-lime-400/[0.1] hover:ring-lime-400/60 p-5 sm:p-6 flex items-center justify-end gap-4 text-right transition`}>
+            <span className="min-w-0"><span className="block text-[12px] font-semibold uppercase tracking-[0.12em] text-lime-400">Next</span><span className="block font-display text-lg font-semibold">{next.label}</span><span className="block text-[13px] text-ink-400 truncate">{next.blurb}</span></span>
+            <span className="w-11 h-11 rounded-xl bg-lime-400 text-ink-950 flex items-center justify-center flex-shrink-0 transition-transform group-hover:translate-x-0.5"><Icon.ArrowRight width={18} height={18} /></span>
+          </Link>
+        ) : (
+          <Link href="/admission" className="group rounded-2xl bg-lime-400 text-ink-950 hover:bg-lime-300 p-5 sm:p-6 flex items-center justify-end gap-4 text-right transition">
+            <span><span className="block text-[12px] font-semibold uppercase tracking-[0.12em] opacity-70">Ready?</span><span className="block font-display text-lg font-semibold">Start the admission form</span><span className="block text-[13px] opacity-70">About five minutes</span></span>
+            <span className="w-11 h-11 rounded-xl bg-ink-950 text-lime-400 flex items-center justify-center flex-shrink-0"><Icon.ArrowRight width={18} height={18} /></span>
+          </Link>
+        )}
+      </div>
+    </nav>
+  );
+}
+
 function SiteFooter() {
   return (
     <footer className="border-t border-white/[0.06] pt-16 pb-28 lg:pb-12 px-5 sm:px-8">
@@ -145,15 +178,15 @@ function SiteFooter() {
           <p className="text-[14px] text-ink-400 leading-relaxed mt-4">Professional roller skating coaching since 2020. Uttara · Bashundhara · Aftab Nagar · Gulshan, Dhaka.</p>
         </div>
         <div>
-          <h5 className="text-[11px] font-semibold uppercase tracking-[0.14em] text-ink-500 mb-4">Explore</h5>
+          <h5 className="text-[11px] font-semibold uppercase tracking-[0.14em] text-ink-400 mb-4">Explore</h5>
           <div className="flex flex-col gap-2.5 text-[14px] text-ink-300">
             {NAV.map((n) => <Link key={n.href} href={n.href} className="hover:text-lime-400 transition-colors">{n.label}</Link>)}
-            <Link href="/admission" className="hover:text-lime-400 transition-colors">Admission</Link>
+            <Link href="/admission" className="hover:text-lime-400 transition-colors">Admission form</Link>
             <Link href="/login" className="hover:text-lime-400 transition-colors">Portal sign in</Link>
           </div>
         </div>
         <div>
-          <h5 className="text-[11px] font-semibold uppercase tracking-[0.14em] text-ink-500 mb-4">Contact</h5>
+          <h5 className="text-[11px] font-semibold uppercase tracking-[0.14em] text-ink-400 mb-4">Contact</h5>
           <div className="flex flex-col gap-2.5 text-[14px] text-ink-300">
             <a href={CONTACT.phoneHref} className="inline-flex items-center gap-2 hover:text-lime-400"><Icon.Phone width={14} height={14} /> {CONTACT.phone}</a>
             <a href={`mailto:${CONTACT.email}`} className="inline-flex items-center gap-2 hover:text-lime-400 break-all"><Icon.Mail width={14} height={14} /> {CONTACT.email}</a>
@@ -161,7 +194,7 @@ function SiteFooter() {
           </div>
         </div>
       </div>
-      <div className="max-w-7xl mx-auto mt-12 pt-6 border-t border-white/[0.06] flex flex-wrap justify-between gap-3 text-[12.5px] text-ink-500">
+      <div className="max-w-7xl mx-auto mt-12 pt-6 border-t border-white/[0.06] flex flex-wrap justify-between gap-3 text-[12.5px] text-ink-400">
         <span>© 2020–{new Date().getFullYear()} Online Skating School. All rights reserved.</span>
         <span className="inline-flex items-center gap-1.5"><Icon.Lock width={12} height={12} /> Secure portal · encrypted sign-in</span>
       </div>

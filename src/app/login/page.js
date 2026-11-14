@@ -1,8 +1,9 @@
 "use client";
 
 import { useState } from "react";
-import { Icon } from "@/components/Icons";
 import Link from "next/link";
+import { Icon } from "@/components/Icons";
+import { Logo, RinkLines } from "@/components/Brand";
 
 export default function LoginPage() {
   const [email, setEmail] = useState("");
@@ -10,13 +11,13 @@ export default function LoginPage() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [capsLock, setCapsLock] = useState(false);
 
   const handleLogin = async (e) => {
     e.preventDefault();
     if (loading) return;
     setError("");
     setLoading(true);
-
     try {
       const res = await fetch("/api/auth", {
         method: "POST",
@@ -26,15 +27,13 @@ export default function LoginPage() {
         body: JSON.stringify({ email, password }),
       });
       const data = await res.json().catch(() => ({}));
-
       if (!res.ok) {
-        setError(data.error || "Login failed");
+        setError(data.error || "Sign in failed");
         setLoading(false);
         return;
       }
-
-      // A hard navigation guarantees the new HTTP-only cookie is included in the
-      // first request for the protected server component tree.
+      // Hard navigation so the new HTTP-only cookie is sent with the first
+      // request for the protected server component tree.
       window.location.assign("/dashboard");
     } catch {
       setError("Unable to reach the server. Please try again.");
@@ -42,61 +41,94 @@ export default function LoginPage() {
     }
   };
 
+  const inputCls = "w-full h-12 px-4 rounded-xl text-[15px] bg-white dark:bg-ink-900 text-ink-900 dark:text-white ring-1 ring-inset ring-ink-900/10 dark:ring-white/10 focus:ring-2 focus:ring-brand-500 outline-none transition-shadow placeholder:text-ink-400";
+
   return (
-    <div className="min-h-screen flex bg-navy">
-      <div className="hidden lg:flex lg:w-[45%] relative overflow-hidden items-center justify-center p-12">
-        <div className="absolute inset-0 opacity-[0.04]" style={{ backgroundImage: "radial-gradient(circle at 1px 1px, #0891B2 1px, transparent 0)", backgroundSize: "36px 36px" }} />
-        <div className="absolute top-[-15%] right-[-15%] w-[500px] h-[500px] bg-[radial-gradient(circle,rgba(8,145,178,0.18)_0%,transparent_70%)] rounded-full" />
-        <div className="absolute bottom-[-10%] left-[-10%] w-[350px] h-[350px] bg-[radial-gradient(circle,rgba(245,158,11,0.10)_0%,transparent_70%)] rounded-full" />
-        <div className="relative z-10 max-w-sm">
-          <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-teal to-teal-light flex items-center justify-center text-3xl mb-8 shadow-glow-teal">⛸</div>
-          <h1 className="text-4xl font-black text-white leading-tight tracking-tight mb-4">Run your school <span className="text-teal-light">from anywhere</span>.</h1>
-          <p className="text-slate-400 text-[15px] leading-relaxed">Attendance, fees, schedules, and staff — all in one dashboard built for Online Skating School&apos;s branches across Dhaka.</p>
-          <div className="flex items-center gap-6 mt-10 text-slate-500 text-xs font-medium">
-            <span className="flex items-center gap-1.5"><Icon.Shield width={14} height={14} /> Role-based access</span>
-            <span className="flex items-center gap-1.5"><Icon.CreditCard width={14} height={14} /> Digital receipts</span>
+    <div className="min-h-screen grid lg:grid-cols-[1fr_1.05fr] bg-white dark:bg-ink-950">
+      {/* Showcase */}
+      <div className="hidden lg:flex relative overflow-hidden bg-ink-950 text-white flex-col justify-between p-12">
+        <RinkLines className="absolute inset-0 w-full h-full" />
+        <div className="absolute inset-0 grain" />
+        <div className="absolute -bottom-40 -left-20 w-[600px] h-[500px] bg-[radial-gradient(closest-side,rgba(10,159,196,0.25),transparent)]" />
+        <Link href="/" className="relative" aria-label="Home"><Logo size={36} /></Link>
+        <div className="relative max-w-md">
+          <h1 className="font-display text-[2.6rem] leading-[1.08] font-semibold tracking-[-0.03em] text-balance">
+            Run every rink, roster and receipt <span className="text-brand-300">from one place.</span>
+          </h1>
+          <p className="text-ink-400 text-[15.5px] leading-relaxed mt-5">Attendance, fees, schedules and staff across all Online Skating School branches, secured by role.</p>
+          <div className="mt-10 grid grid-cols-3 gap-3">
+            {[
+              { icon: Icon.Shield, t: "Role-based access" },
+              { icon: Icon.Lock, t: "Encrypted sessions" },
+              { icon: Icon.FileText, t: "Digital receipts" },
+            ].map((f) => (
+              <div key={f.t} className="rounded-2xl bg-white/[0.04] ring-1 ring-white/[0.08] p-4">
+                <f.icon width={17} height={17} className="text-brand-300" />
+                <div className="text-[12.5px] font-medium text-ink-200 mt-3 leading-snug">{f.t}</div>
+              </div>
+            ))}
           </div>
         </div>
+        <div className="relative text-[12px] text-ink-500">© {new Date().getFullYear()} Online Skating School</div>
       </div>
 
-      <div className="flex-1 flex items-center justify-center px-5 py-12 bg-slate-50 lg:rounded-l-[2.5rem]">
-        <div className="w-full max-w-sm animate-scaleIn">
-          <div className="flex lg:hidden items-center justify-center gap-3 mb-8">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-teal to-teal-light flex items-center justify-center text-xl">⛸</div>
-            <div className="text-xl font-extrabold tracking-tight text-slate-900">Online <span className="text-teal">Skating</span> School</div>
-          </div>
+      {/* Form */}
+      <div className="flex flex-col px-5 sm:px-10 py-8">
+        <div className="flex items-center justify-between lg:justify-end">
+          <Link href="/" className="lg:hidden" aria-label="Home"><Logo size={32} tone="dark" /></Link>
+          <Link href="/" className="text-[13px] font-medium text-ink-500 hover:text-ink-900 dark:hover:text-white inline-flex items-center gap-1.5">
+            <Icon.ArrowLeft width={14} height={14} /> Back to site
+          </Link>
+        </div>
 
-          <h2 className="text-2xl font-extrabold text-slate-900 mb-1">Welcome back</h2>
-          <p className="text-sm text-slate-500 mb-7">Sign in to your dashboard to continue.</p>
+        <div className="flex-1 flex items-center justify-center py-10">
+          <div className="w-full max-w-[380px] animate-scaleIn">
+            <h2 className="font-display text-[28px] font-semibold tracking-tight text-ink-950 dark:text-white">Welcome back</h2>
+            <p className="text-[14.5px] text-ink-500 mt-1.5 mb-8">Sign in to your Online Skating School portal.</p>
 
-          {error && (
-            <div className="bg-red-50 text-red-600 text-sm px-4 py-3 rounded-xl mb-5 flex items-center gap-2 animate-slideUp" role="alert">
-              <Icon.AlertTriangle width={16} height={16} className="flex-shrink-0" />
-              {error}
-            </div>
-          )}
-
-          <form onSubmit={handleLogin} className="space-y-4">
-            <div>
-              <label className="text-xs font-semibold text-slate-600 block mb-1.5">Email</label>
-              <input type="email" className="w-full px-4 py-3 border border-slate-200 rounded-xl text-[15px] bg-white text-slate-800 transition-all duration-150 focus:border-teal focus:ring-4 focus:ring-teal/10 outline-none" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="your@email.com" autoComplete="username" required />
-            </div>
-            <div>
-              <label className="text-xs font-semibold text-slate-600 block mb-1.5">Password</label>
-              <div className="relative">
-                <input type={showPassword ? "text" : "password"} className="w-full px-4 py-3 pr-11 border border-slate-200 rounded-xl text-[15px] bg-white text-slate-800 transition-all duration-150 focus:border-teal focus:ring-4 focus:ring-teal/10 outline-none" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="••••••••" autoComplete="current-password" required />
-                <button type="button" onClick={() => setShowPassword((s) => !s)} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600" aria-label={showPassword ? "Hide password" : "Show password"}>
-                  <Icon.Eye width={16} height={16} />
-                </button>
+            {error && (
+              <div className="bg-red-500/[0.07] ring-1 ring-red-500/20 text-red-700 dark:text-red-300 text-sm px-4 py-3 rounded-xl mb-5 flex items-start gap-2.5 animate-slideUp" role="alert">
+                <Icon.AlertTriangle width={16} height={16} className="flex-shrink-0 mt-0.5" />
+                {error}
               </div>
-            </div>
-            <button type="submit" disabled={loading} className="w-full bg-teal text-white font-semibold py-3 rounded-xl hover:bg-teal-dark active:scale-[0.98] transition-all duration-150 disabled:opacity-60 shadow-sm hover:shadow-glow-teal flex items-center justify-center gap-2">
-              {loading ? <><span className="w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin" /> Signing in…</> : "Sign In"}
-            </button>
-          </form>
+            )}
 
-          <p className="text-xs text-slate-400 text-center mt-8">New student? <Link href="/admission" className="text-teal font-semibold hover:underline">Apply for admission</Link></p>
-          <p className="text-xs text-slate-400 text-center mt-2">Instructor or admin? Contact your branch administrator for credentials.</p>
+            <form onSubmit={handleLogin} className="space-y-5" noValidate>
+              <div>
+                <label htmlFor="email" className="text-[13px] font-semibold text-ink-700 dark:text-ink-300 block mb-2">Email</label>
+                <input id="email" type="email" className={inputCls} value={email} onChange={(e) => setEmail(e.target.value)} placeholder="you@example.com" autoComplete="username" required autoFocus />
+              </div>
+              <div>
+                <label htmlFor="password" className="text-[13px] font-semibold text-ink-700 dark:text-ink-300 block mb-2">Password</label>
+                <div className="relative">
+                  <input
+                    id="password"
+                    type={showPassword ? "text" : "password"}
+                    className={inputCls + " pr-12"}
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    onKeyUp={(e) => setCapsLock(e.getModifierState?.("CapsLock"))}
+                    placeholder="Enter your password"
+                    autoComplete="current-password"
+                    required
+                  />
+                  <button type="button" onClick={() => setShowPassword((s) => !s)} className="absolute right-2 top-1/2 -translate-y-1/2 w-9 h-9 rounded-lg flex items-center justify-center text-ink-400 hover:text-ink-700 dark:hover:text-white" aria-label={showPassword ? "Hide password" : "Show password"}>
+                    <Icon.Eye width={17} height={17} />
+                  </button>
+                </div>
+                {capsLock && <p className="text-[12px] text-gold-600 dark:text-gold-300 mt-2 inline-flex items-center gap-1.5"><Icon.Info width={13} height={13} /> Caps Lock is on</p>}
+              </div>
+              <button type="submit" disabled={loading || !email || !password} className="w-full h-12 bg-ink-950 dark:bg-white text-white dark:text-ink-950 font-semibold rounded-xl hover:bg-ink-800 dark:hover:bg-ink-100 active:scale-[0.99] transition disabled:opacity-50 flex items-center justify-center gap-2">
+                {loading ? <><span className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" /> Signing in…</> : <>Sign in <Icon.ArrowRight width={16} height={16} /></>}
+              </button>
+            </form>
+
+            <div className="mt-8 rounded-2xl bg-ink-50 dark:bg-white/[0.03] ring-1 ring-ink-900/[0.06] dark:ring-white/[0.06] p-4 text-[13px] text-ink-600 dark:text-ink-400 leading-relaxed">
+              <span className="font-semibold text-ink-900 dark:text-white">New student?</span>{" "}
+              <Link href="/admission" className="font-semibold text-brand-700 dark:text-brand-300 hover:underline underline-offset-2">Apply for admission</Link>. Staff accounts are created by your administrator. Forgot your password? Ask your administrator to reset it.
+            </div>
+            <p className="mt-6 text-[12px] text-ink-400 flex items-center gap-1.5"><Icon.Lock width={12} height={12} /> Accounts lock for 15 minutes after 5 failed attempts.</p>
+          </div>
         </div>
       </div>
     </div>

@@ -13,56 +13,75 @@ html {
 body {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  font-feature-settings: "cv11", "ss01";
 }
 
-/* Slim, quiet scrollbars for dashboard surfaces */
-::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
-}
-::-webkit-scrollbar-track {
-  background: transparent;
-}
-::-webkit-scrollbar-thumb {
-  background: #CBD5E1;
-  border-radius: 8px;
-}
-::-webkit-scrollbar-thumb:hover {
-  background: #94A3B8;
+h1, h2, h3, .font-display {
+  font-feature-settings: normal;
 }
 
-/* Smooth focus ring reset for custom inputs */
+::selection {
+  background: rgba(10, 159, 196, 0.22);
+}
+
+/* Slim, quiet scrollbars */
+::-webkit-scrollbar { width: 8px; height: 8px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: #D9DDEA; border-radius: 8px; }
+::-webkit-scrollbar-thumb:hover { background: #B6BDD2; }
+.dark ::-webkit-scrollbar-thumb { background: #252B40; }
+.dark ::-webkit-scrollbar-thumb:hover { background: #3A425C; }
+
 input, select, textarea, button {
   font-family: inherit;
 }
 
-/* Print support for the payment receipt (and any future .print-area use).
-   Printing directly from the page — rather than opening a blank popup and
-   document.write()-ing HTML into it — avoids popup blockers and CSP edge
-   cases that a synthesized about:blank document can run into once deployed. */
-@media print {
-  body * {
-    visibility: hidden;
+/* Visible keyboard focus everywhere, invisible for mouse users */
+:focus-visible {
+  outline: 2px solid #22BCE0;
+  outline-offset: 2px;
+}
+:focus:not(:focus-visible) {
+  outline: none;
+}
+
+@layer utilities {
+  /* Fine film grain for dark hero surfaces (inline SVG, no network) */
+  .grain {
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  0 0 0 0.05 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
   }
-  .print-area,
-  .print-area * {
+  .text-balance { text-wrap: balance; }
+  .tabular { font-variant-numeric: tabular-nums; }
+  .hairline-grid {
+    background-image:
+      linear-gradient(to right, rgba(255,255,255,0.045) 1px, transparent 1px),
+      linear-gradient(to bottom, rgba(255,255,255,0.045) 1px, transparent 1px);
+    background-size: 56px 56px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* Print support for the payment receipt (and any future .print-area use).
+   Printing directly from the page avoids popup blockers and CSP edge cases. */
+@media print {
+  body * { visibility: hidden; }
+  .print-area, .print-area * {
     visibility: visible;
     print-color-adjust: exact;
     -webkit-print-color-adjust: exact;
   }
   .print-area {
-    position: fixed;
-    inset: 0;
-    margin: 0;
-    padding: 0;
-    display: flex;
-    align-items: flex-start;
-    justify-content: center;
+    position: fixed; inset: 0; margin: 0; padding: 0;
+    display: flex; align-items: flex-start; justify-content: center;
   }
-  .no-print {
-    display: none !important;
-  }
-  @page {
-    margin: 12mm;
-  }
+  .no-print { display: none !important; }
+  @page { margin: 12mm; }
 }

@@ -1,4 +1,4 @@
-import { Inter } from "next/font/google";
+import { Inter, Sora } from "next/font/google";
 import "./globals.css";
 import PWARegister from "@/components/PWARegister";
 import { ThemeProvider } from "@/lib/theme-context";
@@ -7,6 +7,14 @@ const inter = Inter({
   subsets: ["latin"],
   weight: ["400", "500", "600", "700", "800", "900"],
   variable: "--font-inter",
+  display: "swap",
+});
+
+// Display face for headings and large numbers (self-hosted by next/font at build time).
+const sora = Sora({
+  subsets: ["latin"],
+  weight: ["500", "600", "700", "800"],
+  variable: "--font-sora",
   display: "swap",
 });
 
@@ -37,12 +45,17 @@ export const metadata = {
 export const viewport = {
   width: "device-width",
   initialScale: 1,
-  themeColor: "#0891B2",
+  themeColor: [
+    { media: "(prefers-color-scheme: light)", color: "#FFFFFF" },
+    { media: "(prefers-color-scheme: dark)", color: "#0B0F1C" },
+  ],
 };
 
 export default function RootLayout({ children }) {
   return (
-    <html lang="en" className={inter.variable}>
+    // suppressHydrationWarning: the inline theme script below adds `dark` to
+    // <html> before React hydrates, which is intentional.
+    <html lang="en" className={`${inter.variable} ${sora.variable}`} suppressHydrationWarning>
       <head>
         {/* Runs before first paint to set html.dark from the saved
             preference (or OS preference on first visit) — without this,
@@ -53,7 +66,7 @@ export default function RootLayout({ children }) {
           }}
         />
       </head>
-      <body className="font-sans antialiased bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 transition-colors duration-150">
+      <body className="font-sans antialiased bg-white dark:bg-ink-950 text-ink-900 dark:text-ink-100 transition-colors duration-150">
         <ThemeProvider>
           {children}
         </ThemeProvider>

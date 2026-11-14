@@ -63,8 +63,11 @@ src/
                          Previous/Next Pager above the footer (driven by NAV order; the last page links to /admission), footer, mobile CTA bar,
                          PageHero, Section, SectionHead, CtaBand, `dark` class tokens. ALL public pages use the dark look.
     site/*Content.js     Home/Programs/Why/Branches/Faq page bodies + PortalPreview (client components)
-    BranchDrawer.js      Animated slide-over (right) listing a branch's students + coaches: enter/exit transitions, staggered rows
-                         (`animate-itemIn`), program filter + search, ESC/backdrop close, body scroll lock. Used on dashboard/branches.
+    BranchShowcase.js    Branch "open-up" experience (dashboard/branches). Shared-element morph: the panel is revealed by a Web
+                         Animations API clip-path that starts at the clicked card's rect (card hidden meanwhile) and reverses on
+                         close. Motion graphics: rink lanes self-draw (.mg-draw), a lime skater laps the rink (SVG animateMotion + trail),
+                         the name rises letter by letter (.mg-letter), count-up numbers, a program donut, student cards cascade with blur
+                         (.mg-card). Classes live in globals.css "Motion graphics". prefers-reduced-motion → no morph, instant content.
     Icons.js, PWARegister.js
   lib/fees.js            PROGRAM_FEES (Beginner 2000 / Intermediate 2500 / Advanced 3000) + balanceHistory() (≤12 months, paid/partial/due
                          by matching monthly_fee payments to "Month YYYY" labels)
@@ -290,6 +293,10 @@ to reset it, re-run `db:bootstrap-admin` with a new password).
 
 ## Changelog
 <!-- Newest first. Format: YYYY-MM-DD — what changed — files touched -->
+- **2026-11-14** — The owner wasn't satisfied with the simple slide-over, so it was replaced by **BranchShowcase**: the clicked card morphs into a
+  full panel (clip-path from the card's rect, 900ms ease-in-out) with motion graphics (self-drawing rink, lapping skater, letter-by-letter title,
+  count-ups, donut, cascading student cards) and reverses back into the card on close. Verified with a frame sequence (80ms → 2.4s + close) on
+  desktop and mobile. BranchDrawer.js deleted. Files: components/BranchShowcase.js, globals.css, dashboard/branches/page.js.
 - **2026-11-14** — Branches: clicking a branch card (or Enter/Space) opens an animated drawer with that branch's students. It shows totals,
   an animated program split bar, coaches, search, program filter and a staggered list; each row links to the student profile. Member data is
   prefetched when the page loads, so the drawer is instant. Card actions stop propagation. Deactivate/Delete now use ConfirmDialog

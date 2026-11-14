@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback } from "react";
 import { api } from "@/lib/api";
 import { Icon } from "@/components/Icons";
 import { Badge, PageLoading, EmptyState, Toast, ModalShell, ConfirmDialog, PageHeader, StatCard, cx } from "@/components/ui";
-import BranchDrawer from "@/components/BranchDrawer";
+import BranchShowcase from "@/components/BranchShowcase";
 import { RinkLines } from "@/components/Brand";
 
 export default function BranchesPage() {
@@ -16,7 +16,7 @@ export default function BranchesPage() {
   const [busyId, setBusyId] = useState(null);
   const [confirm, setConfirm] = useState(null);
   // Branch drawer: members are loaded once, on first open, then reused.
-  const [openClub, setOpenClub] = useState(null);
+  const [openClub, setOpenClub] = useState(null); // { club, origin: card element }
   const [members, setMembers] = useState({ students: [], instructors: [], loaded: false, loading: false });
   const loadMembers = useCallback(() => {
     setMembers((m) => {
@@ -27,7 +27,7 @@ export default function BranchesPage() {
       return { ...m, loading: true };
     });
   }, []);
-  const openDrawer = useCallback((club) => { setOpenClub(club); loadMembers(); }, [loadMembers]);
+  const openDrawer = useCallback((club, origin) => { setOpenClub({ club, origin }); loadMembers(); }, [loadMembers]);
   const closeDrawer = useCallback(() => setOpenClub(null), []);
 
   const load = () => api("/api/clubs?all=1").then(setClubs).finally(() => setLoading(false));
@@ -106,8 +106,8 @@ export default function BranchesPage() {
         <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {clubs.map((c) => (
             <div key={c.id} role="button" tabIndex={0} aria-label={`Show students of ${c.name}`}
-              onClick={() => openDrawer(c)}
-              onKeyDown={(e) => { if (e.target === e.currentTarget && (e.key === "Enter" || e.key === " ")) { e.preventDefault(); openDrawer(c); } }}
+              onClick={(e) => openDrawer(c, e.currentTarget)}
+              onKeyDown={(e) => { if (e.target === e.currentTarget && (e.key === "Enter" || e.key === " ")) { e.preventDefault(); openDrawer(c, e.currentTarget); } }}
               className={`${cx.card} group overflow-hidden flex flex-col cursor-pointer transition-all duration-300 hover:-translate-y-1 hover:shadow-lift dark:hover:ring-white/[0.16] focus-visible:ring-2 focus-visible:ring-brand-500 ${c.status === "inactive" ? "opacity-60" : ""}`}>
               <div className="relative h-24 bg-ink-950 overflow-hidden">
                 <RinkLines animated={false} className="absolute inset-0 w-full h-full" />
@@ -150,7 +150,7 @@ export default function BranchesPage() {
       {showAdd && <BranchModal title="Add Branch" onClose={() => setShowAdd(false)} onSave={addBranch} />}
       {editing && <BranchModal title="Edit Branch" initial={editing} onClose={() => setEditing(null)} onSave={saveEdit} />}
 
-      <BranchDrawer club={openClub} students={members.students} instructors={members.instructors} loading={members.loading} onClose={closeDrawer} />
+      {openClub && <BranchShowcase key={openClub.club.id} club={openClub.club} origin={openClub.origin} students={members.students} instructors={members.instructors} loading={members.loading} onClose={closeDrawer} />}
       <ConfirmDialog open={!!confirm} title={confirm?.title} message={confirm?.message} confirmLabel={confirm?.label} tone={confirm?.tone} busy={!!busyId} onConfirm={runConfirm} onCancel={() => setConfirm(null)} />
       <Toast message={toast?.message} tone={toast?.tone} onClose={() => setToast(null)} />
     </div>

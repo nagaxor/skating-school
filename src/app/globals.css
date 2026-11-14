@@ -60,6 +60,22 @@ input, select, textarea, button {
   }
 }
 
+/* ── Motion graphics (branch showcase) ─────────────────────────────────── */
+.mg-draw { stroke-dasharray: 1000; stroke-dashoffset: 1000; animation: mgDraw 1.7s cubic-bezier(.65,0,.35,1) forwards; }
+@keyframes mgDraw { to { stroke-dashoffset: 0; } }
+.mg-trail { stroke-dasharray: 150 850; animation: mgTrail 5.5s linear infinite; }
+@keyframes mgTrail { from { stroke-dashoffset: 0; } to { stroke-dashoffset: -1000; } }
+.mg-letter { display: inline-block; opacity: 0; transform: translateY(0.65em) rotate(8deg); animation: mgLetter .75s cubic-bezier(.22,1,.36,1) forwards; }
+@keyframes mgLetter { to { opacity: 1; transform: none; } }
+.mg-fade { opacity: 0; transform: translateY(14px); animation: mgFade .7s cubic-bezier(.22,1,.36,1) forwards; }
+@keyframes mgFade { to { opacity: 1; transform: none; } }
+.mg-card { opacity: 0; transform: translateY(22px) scale(.96); filter: blur(6px); animation: mgCard .65s cubic-bezier(.22,1,.36,1) forwards; }
+@keyframes mgCard { to { opacity: 1; transform: none; filter: blur(0); } }
+.mg-float { animation: mgFloat 7s ease-in-out infinite; }
+@keyframes mgFloat { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-16px); } }
+.mg-pulse { animation: mgPulse 2.4s ease-in-out infinite; transform-origin: center; transform-box: fill-box; }
+@keyframes mgPulse { 0%, 100% { opacity: .35; transform: scale(1); } 50% { opacity: 0; transform: scale(2.4); } }
+
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
     animation-duration: 0.01ms !important;

@@ -59,12 +59,18 @@ src/
     AccountActions.js    ResetPasswordModal, generatePassword(), strongPassword(), PASSWORD_HINT
     GuardianHome.js      Guardian portal home (child cards) + useMyChildren() hook, TODAY status map
     AttendanceGrid.js    12-week Sat→Fri attendance grid + recent list (staff student page + guardian child page)
+    SiteShell.js         Public-site chrome: dark nav (active link = lime underline, mobile menu), footer, mobile CTA bar,
+                         PageHero, Section, SectionHead, CtaBand, `dark` class tokens. ALL public pages use the dark look.
+    site/*Content.js     Home/Programs/Why/Branches/Faq page bodies + PortalPreview (client components)
     Icons.js, PWARegister.js
   lib/fees.js            PROGRAM_FEES (Beginner 2000 / Intermediate 2500 / Advanced 3000) + balanceHistory() (≤12 months, paid/partial/due
                          by matching monthly_fee payments to "Month YYYY" labels)
+  lib/site-content.js    Public copy: CONTACT, STATS, PROGRAMS, INCLUDED, FEATURES, STEPS, FAQ, NAV (edit text here)
   lib/csv.js             downloadCsv(filename, rows, columns): client CSV export, formula-injection safe, UTF-8 BOM
   app/
-    page.js              Public landing page
+    page.js              Public home (hero, stats, explore cards, admission steps, CTA)
+    programs/, why-us/, branches/, faq/   Separate public pages (server page.js = metadata; content in components/site/*).
+                         branches/ reads active clubs from the DB per request (force-dynamic).
     login/, admission/   Public pages (admission = long public application form, incl. photo data URL)
     dashboard/           Authenticated area: activity (admin audit log), attendance, branches, children/[id] (guardian),
                          guardians (admin), fees, notices,
@@ -256,6 +262,10 @@ to reset it, re-run `db:bootstrap-admin` with a new password).
 
 ## Changelog
 <!-- Newest first. Format: YYYY-MM-DD — what changed — files touched -->
+- **2026-11-14** — Public site split into separate pages per the owner: `/` (home), `/programs`, `/why-us`, `/branches` (live DB), `/faq`.
+  All are dark, matching the home hero (midnight bg, lime CTAs/accents, cobalt highlights; no white sections). Shared SiteShell (nav with active
+  state + mobile menu, footer, mobile CTA, page hero, CTA band). Copy centralised in lib/site-content.js. Branches page has Google Maps links.
+  Server page files export metadata (Icon is a client-module object, so pages render client content components).
 - **2026-11-14** — **Client palette applied:** Midnight Black / Electric Cobalt / Acid Lime. Token scales rewritten (brand = cobalt, ink = midnight,
   new lime). Hard-coded hex and rgba glows swept. Lime CTAs (landing, admission submit, btnBrand), lime hero headline, lime active-nav bar,
   lime ring gradients. Program tones changed. Favicon/PWA icons redrawn in the new colours (rendered via headless Chrome; ico built by hand).
